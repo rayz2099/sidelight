@@ -1,103 +1,122 @@
-# SideLight - 智能 RAW 照片调色助手
+# SideLight 💡
 
-SideLight 是一个基于 AI 的命令行工具，专为摄影师设计。它能够自动分析 RAW 格式照片（如 .ARW, .NEF, .CR3 等），利用 Google Gemini 的视觉能力生成调色参数，并输出为 Adobe 兼容的 XMP Sidecar 文件。
+> **AI-Powered RAW Image Color Grading Tool**
+>
+> SideLight 是一个专为摄影师打造的智能命令行工具。它利用 Google Gemini 的视觉能力分析 RAW 照片，生成专业级的调色参数，并输出为 Adobe 兼容的 XMP Sidecar 文件。
 
-这意味着你可以在 Lightroom 或 Camera Raw 中直接应用 AI 生成的调色，而无需修改原始 RAW 文件。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Report Card](https://goreportcard.com/badge/github.com/linran/sidelight)](https://goreportcard.com/report/github.com/linran/sidelight)
 
-## ✨ 功能特点
+## ✨ 核心特性
 
-*   **非破坏性编辑**：只生成 `.xmp` 文件，绝不修改原始 RAW 文件。
-*   **广泛的格式支持**：支持 Sony ARW, Nikon NEF, Canon CR2/CR3, Fuji RAF 等所有 ExifTool 支持的格式。
-*   **AI 智能调色**：利用 Gemini Pro/Flash Vision 模型分析画面内容（曝光、白平衡、风格），生成自然的调色参数。
-*   **批量处理**：支持并发处理整个文件夹的 RAW 文件，并在终端显示进度条。
-*   **高效**：仅提取嵌入的 JPEG 预览图进行上传分析，大幅节省流量和时间。
+- 🛡️ **非破坏性编辑**：仅生成 `.xmp` 文件，**绝不修改**原始 RAW 文件。
+- 🎨 **风格化调色**：内置多种风格预设（胶片、黑白、电影感等），并支持自然语言微调。
+- 📷 **广泛支持**：兼容 Sony ARW, Nikon NEF, Canon CR3, Fuji RAF 等所有主流 RAW 格式。
+- ⚡ **极速处理**：并发架构 + 智能预览提取，无需上传庞大的 RAW 文件。
+- 🔧 **工作流友好**：生成的 XMP 可被 Lightroom / Camera Raw 自动识别读取。
 
-## 🛠️ 准备工作
+## 🛠️ 安装
 
-在开始之前，请确保你的系统已安装以下依赖：
+### 依赖
 
-1.  **ExifTool**: 用于从 RAW 文件中提取预览图。
-    *   **macOS**: `brew install exiftool`
-    *   **Windows**: 下载并安装 [ExifTool](https://exiftool.org/)，确保其在系统 PATH 中。
-    *   **Linux**: `sudo apt-get install libimage-exiftool-perl`
+请确保系统已安装以下工具：
 
-2.  **Google Gemini API Key**: 需要一个有效的 API Key。
-    *   可在 [Google AI Studio](https://aistudio.google.com/) 免费申请。
+1.  **ExifTool** (必须): 用于提取 RAW 预览图。
+    *   macOS: `brew install exiftool`
+    *   Linux: `sudo apt-get install libimage-exiftool-perl`
+2.  **Just** (可选): 方便的命令运行工具。
+    *   macOS: `brew install just`
 
-## 🚀 安装与构建
-
-### 1. 克隆项目
+### 从源码编译
 
 ```bash
-git clone https://github.com/yourusername/sidelight.git
+git clone https://github.com/linran/sidelight.git
 cd sidelight
+
+# 编译 (产物在 bin/sidelight)
+just build
+
+# 安装到 $GOPATH/bin
+just install
 ```
 
-### 2. 编译
+## 🚀 快速开始
 
-```bash
-go build -o sidelight ./cmd/sidelight
-```
+### 1. 配置 API Key
 
-## 📖 使用指南
-
-### 1. 设置 API Key
-
-你可以通过环境变量设置 API Key（推荐）：
+SideLight 需要 Google Gemini API Key 才能工作。[点击这里申请免费 Key](https://aistudio.google.com/)。
 
 ```bash
 export GEMINI_API_KEY="你的_API_KEY_粘贴在这里"
 ```
 
-或者在运行时通过参数传递：
+### 2. 基础用法
+
+处理单个文件或整个文件夹：
 
 ```bash
-./sidelight --api-key "你的_API_KEY" ...
+sidelight images/raw/DSC_001.ARW
+# 或者
+sidelight images/raw/
 ```
 
-### 2. 处理照片
+### 3. 进阶调色 (Styles & Prompts)
 
-**处理单个文件：**
+SideLight 不仅仅是自动曝光，你还可以告诉 AI 你想要的风格：
+
+**使用预设风格 (`--style` / `-s`)：**
+
+可选值：`natural` (默认), `cinematic`, `film`, `bw` (黑白), `portrait`.
 
 ```bash
-./sidelight images/raw/DSC_001.ARW
+# 电影感
+sidelight -s cinematic images/raw/
 ```
 
-**处理整个文件夹：**
+**自然语言微调 (`--prompt` / `-p`)：**
+
+你可以用自然语言进一步描述你的意图：
 
 ```bash
-./sidelight images/raw/
+# 胶片感，但希望更暖一些
+sidelight -s film -p "Make it warmer, golden hour vibe" images/raw/
+
+# 黑白，高对比度
+sidelight -s bw -p "High contrast, dramatic shadows" images/raw/
 ```
 
-**调整并发数量（默认为 4）：**
-如果你想加快速度或减少 API 请求频率，可以使用 `-j` 参数：
+**并发控制 (`--concurrency` / `-j`)：**
 
 ```bash
-./sidelight -j 8 images/raw/
+# 同时处理 8 张照片
+sidelight -j 8 images/raw/
 ```
 
-### 3. 在 Lightroom 中查看结果
+##  workflow: Lightroom 配合指南
 
-1.  处理完成后，你会发现每个 RAW 文件旁边都有一个同名的 `.xmp` 文件。
-2.  打开 Adobe Lightroom Classic 或 Photoshop Camera Raw。
-3.  导入该 RAW 文件（或者如果已经在库中，右键 -> 元数据 -> 从文件读取元数据）。
-4.  你会看到“基本”面板中的曝光、对比度、高光、阴影等参数已被自动调整。
+1.  运行 `sidelight` 处理你的 RAW 文件夹。
+2.  **场景 A (未导入)**: 直接将文件夹导入 Lightroom，调色会自动应用。
+3.  **场景 B (已导入)**:
+    *   在 Lightroom 选中照片。
+    *   右键 -> **元数据** -> **从文件中读取元数据**。
+    *   或者使用快捷键: `Cmd + Option + Shift + R` (Mac)。
 
-## ⚙️ 参数说明
+## 📝 参数列表
 
-| 参数 | 简写 | 描述 | 默认值 |
+| Flag | Shorthand | Description | Default |
 | :--- | :--- | :--- | :--- |
-| `--api-key` | 无 | Gemini API Key | 无 (必须) |
-| `--concurrency` | `-j` | 并发处理的 worker 数量 | 4 |
+| `--style` | `-s` | 调色风格 (natural, cinematic, film, bw, portrait) | `natural` |
+| `--prompt` | `-p` | 自定义微调指令 (英文描述效果最佳) | `""` |
+| `--concurrency` | `-j` | 并发处理线程数 | `4` |
+| `--api-key` | | Gemini API Key (推荐使用环境变量) | |
 
-## 🏗️ 技术架构
+## 🏗️ 架构
 
-*   **语言**: Go (Golang)
-*   **CLI 框架**: Cobra
-*   **图像提取**: ExifTool Wrapper
-*   **AI 引擎**: Google Gemini (via `google-generative-ai-go`)
-*   **并发模型**: Worker Pool pattern
+*   **Language**: Go 1.22+
+*   **CLI**: Cobra + Viper
+*   **Imaging**: ExifTool (Wrapper)
+*   **AI**: Google Gemini Pro Vision
 
-## ⚠️ 免责声明
+## 📄 License
 
-虽然本工具不会修改您的原始 RAW 文件，但建议在批量操作前备份您的数据。AI 生成的调色结果仅供参考，旨在提供一个良好的修图起点。
+MIT © 2025 linran
