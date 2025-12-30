@@ -61,11 +61,48 @@ Schema:
 
 // styles maps style names to detailed prompting instructions.
 var styles = map[string]string{
-	"natural":   "Aim for accurate colors, balanced exposure, and realistic reproduction of the scene. Correct any white balance issues.",
-	"cinematic": "Create a cinematic look. Use complementary colors (like teal/orange where appropriate), moody lighting, and slightly crushed blacks for depth.",
-	"film":      "Emulate analog film stock. Soft highlights, rich colors, maybe slightly lifted blacks, and a bit of texture.",
-	"bw":        "Convert to Black and White. Focus on contrast, structure, and tonal separation. Ensure true blacks and bright whites.",
-	"portrait":  "Focus on flattering skin tones. Soften texture slightly, ensure good exposure on the subject, and create a gentle visual hierarchy.",
+	// --- Base / Standard ---
+	"natural":  "Aim for accurate colors, balanced exposure, and realistic reproduction of the scene. Correct any white balance issues.",
+	"standard": "Mimic a standard camera profile. Good contrast, standard saturation, sharp details, ready for publishing.",
+	"vivid":    "Punchy colors and contrast. Similar to 'Velvia' or 'Vivid' camera profiles. Make the image pop but keep it realistic.",
+	"flat":     "Low contrast, maximize dynamic range (Log-like). Preserve all highlight and shadow details for further editing. Very neutral.",
+	"hdr":      "High Dynamic Range look. Open up shadows, recover highlights. Maximize local contrast (clarity) without looking artificial.",
+
+	// --- Black & White ---
+	"bw":          "Convert to Black and White. Balanced tonal range. Focus on structure and composition.",
+	"bw-contrast": "High contrast Black and White. Deep blacks, bright whites. Dramatic, 'Noir' style.",
+	"bw-soft":     "Soft, dreamy Black and White. Low contrast, slightly lifted blacks, gentle gradients.",
+	"bw-sepia":    "Black and White with a warm Sepia toning. Old photograph feel.",
+
+	// --- Film / Analog Simulation ---
+	"film":      "General analog film look. Grain, soft highlights, rich colors, maybe slightly lifted blacks.",
+	"kodak":     "Mimic Kodak Gold/Portra. Warm tones, yellow/red bias in highlights, nice skin tones, nostalgic feel.",
+	"fuji":      "Mimic Fujifilm. Emphasis on greens and cool tones. Hard contrast, slightly magenta shadows.",
+	"polaroid":  "Instant film look. Square crop feel (in color processing), faded, shifting colors, soft focus, vintage vibe.",
+	"retro-70s": "1970s aesthetic. Strong yellow/orange cast, faded shadows, slightly blurry, vintage warmth.",
+
+	// --- Cinematic / Art ---
+	"cinematic":   "Movie look. Moody lighting, wide dynamic range but controlled contrast. Intentional color grading.",
+	"teal-orange": "Blockbuster movie look. Push shadows towards teal/cyan and highlights towards orange/skin tones.",
+	"cyberpunk":   "Futuristic, neon look. Shift white balance towards cool/magenta. High contrast. Emphasize teal, pink, and purple.",
+	"matte":       "Low contrast, faded look. Lift the blacks significantly to create a matte finish. Soft, desaturated colors.",
+	"dreamy":      "Ethereal, glowy look. Reduce clarity and dehaze slightly (negative values). Soft, pastel colors. High key.",
+	"wes-anderson": "Pastel color palette, symmetrical feel (in tone), high saturation but soft contrast, warm and quirky.",
+
+	// --- Scenery / Environment ---
+	"landscape":   "Maximize dynamic range. Enhance greens (foliage) and blues (sky). Deep details, punchy contrast.",
+	"golden-hour": "Emphasize the warm, golden light of sunset/sunrise. Enhance oranges, reds, and yellows. Soft contrast.",
+	"blue-hour":   "Emphasize the deep cool blues of twilight. cool white balance, rich shadows, preserve city lights if any.",
+	"urban":       "Gritty city look. Desaturated colors except for reds/yellows. High clarity/texture. Concrete grey tones.",
+	"snow":        "High-key look. Ensure snow is white (not grey/blue). Bright exposure. Crisp details.",
+
+	// --- Subject Specific ---
+	"portrait":         "Focus on flattering skin tones. Soften texture slightly, ensure good exposure on face. Gentle visual hierarchy.",
+	"portrait-glamour": "Beauty retouch style. Very soft skin (negative texture/clarity), bright exposure, glowing highlights.",
+	"food":             "Appetizing look. Warmer white balance. Slightly increased saturation and sharpness. Make textures pop.",
+	"street":           "Documentary style. High contrast, gritty texture. Focus on storytelling and 'decisive moment' feel.",
+	"macro":            "Focus on details. High sharpness and texture. Creamy background (if possible via contrast separation). Vivid colors.",
+	"product":          "Clean, commercial look. Neutral white balance (pure whites). Sharp, well-lit, accurate colors.",
 }
 
 func (g *GeminiClient) AnalyzeImage(ctx context.Context, imageData []byte, opts AnalysisOptions) (*models.GradingParams, error) {
