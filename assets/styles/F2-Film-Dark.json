@@ -1,0 +1,13 @@
+{
+  "id": "F2-Film-Dark",
+  "name": "Dark Slide",
+  "background_type": "color",
+  "background_color": "#111111",
+  "padding_ratio": 0.02,
+  "bottom_bar_ratio": 0.08,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "KODAK PORTRA 400", "font_file": "MapleMono-NF-CN-Bold.ttf", "font_size": 0.015, "color": "#E8C046", "anchor": "bottom-left", "margin_y": 0.03, "margin_x": 0.02 },
+    { "type": "text", "content": "{{.ShutterSpeed}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.015, "color": "#FFFFFF", "anchor": "bottom-right", "margin_y": 0.03, "margin_x": 0.02 }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "M5-Bottom-Heavy",
+  "name": "Bottom Weighted",
+  "background_type": "color",
+  "background_color": "#FFFFFF",
+  "padding_ratio": 0.02,
+  "bottom_bar_ratio": 0.12,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "{{.FocalLength}}  f/{{.Aperture}}", "font_file": "MapleMono-NF-CN-Bold.ttf", "font_size": 0.018, "color": "#000000", "anchor": "bottom-center", "margin_y": 0.07, "margin_x": 0.0 },
+    { "type": "text", "content": "{{.Date}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.01, "color": "#999999", "anchor": "bottom-center", "margin_y": 0.04, "margin_x": 0.0 }
+  ]
+}

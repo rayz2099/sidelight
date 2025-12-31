@@ -1,0 +1,12 @@
+{
+  "id": "F4-Cinema-Wide",
+  "name": "Cinematic Letterbox",
+  "background_type": "color",
+  "background_color": "#000000",
+  "padding_ratio": 0.0,
+  "bottom_bar_ratio": 0.15,
+  "elements": [
+    { "type": "image", "anchor": "top-center" },
+    { "type": "text", "content": "DIRECTED BY SIDELIGHT", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.012, "color": "#AAAAAA", "anchor": "bottom-center", "margin_y": 0.075, "margin_x": 0.0 }
+  ]
+}

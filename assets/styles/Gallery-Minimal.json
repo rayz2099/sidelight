@@ -1,0 +1,34 @@
+{
+  "id": "Gallery-Minimal",
+  "name": "Gallery Dark Minimal",
+  "background_type": "color",
+  "background_color": "#1A1A1A",
+  "padding_ratio": 0.20,
+  "bottom_bar_ratio": 0.10,
+  "elements": [
+    {
+      "type": "image",
+      "anchor": "center"
+    },
+    {
+      "type": "text",
+      "content": "SHOT ON {{.Model}}",
+      "font_file": "MapleMono-NF-CN-Bold.ttf",
+      "font_size": 0.012,
+      "color": "#888888",
+      "anchor": "bottom-center",
+      "margin_y": 0.08,
+      "margin_x": 0.0
+    },
+    {
+      "type": "text",
+      "content": "{{.FocalLength}} · f/{{.Aperture}} · {{.ShutterSpeed}}",
+      "font_file": "MapleMono-NF-CN-Regular.ttf",
+      "font_size": 0.010,
+      "color": "#555555",
+      "anchor": "bottom-center",
+      "margin_y": 0.05,
+      "margin_x": 0.0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "G2-Glass-Light",
+  "name": "Light Blur",
+  "background_type": "image_blur",
+  "blur_sigma": 10.0,
+  "padding_ratio": 0.08,
+  "bottom_bar_ratio": 0.05,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "{{.Lens}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.01, "color": "#FFFFFF", "anchor": "bottom-left", "margin_y": 0.02, "margin_x": 0.08 }
+  ]
+}

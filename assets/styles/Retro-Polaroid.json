@@ -1,0 +1,34 @@
+{
+  "id": "Retro-Polaroid",
+  "name": "Retro Polaroid Style",
+  "background_type": "color",
+  "background_color": "#FDFBF7",
+  "padding_ratio": 0.08,
+  "bottom_bar_ratio": 0.25,
+  "elements": [
+    {
+      "type": "image",
+      "anchor": "center"
+    },
+    {
+      "type": "text",
+      "content": "{{.Date}}",
+      "font_file": "MapleMono-NF-CN-Italic.ttf",
+      "font_size": 0.025,
+      "color": "#333333",
+      "anchor": "bottom-left",
+      "margin_y": 0.15,
+      "margin_x": 0.08
+    },
+    {
+      "type": "text",
+      "content": "#{{.Make}} #{{.Model}}",
+      "font_file": "MapleMono-NF-CN-Regular.ttf",
+      "font_size": 0.015,
+      "color": "#999999",
+      "anchor": "bottom-right",
+      "margin_y": 0.15,
+      "margin_x": 0.08
+    }
+  ]
+}

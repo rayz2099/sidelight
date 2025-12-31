@@ -1,0 +1,11 @@
+{
+  "id": "M3-Pure-Frame",
+  "name": "Pure Frame No Text",
+  "background_type": "color",
+  "background_color": "#FFFFFF",
+  "padding_ratio": 0.04,
+  "bottom_bar_ratio": 0.0,
+  "elements": [
+    { "type": "image", "anchor": "center" }
+  ]
+}

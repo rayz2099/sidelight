@@ -1,0 +1,12 @@
+{
+  "id": "F3-Fuji-Green",
+  "name": "Fuji Style",
+  "background_type": "color",
+  "background_color": "#F0F5F0",
+  "padding_ratio": 0.05,
+  "bottom_bar_ratio": 0.10,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "FUJIFILM {{.Model}}", "font_file": "MapleMono-NF-CN-Bold.ttf", "font_size": 0.014, "color": "#003300", "anchor": "bottom-center", "margin_y": 0.04, "margin_x": 0.0 }
+  ]
+}

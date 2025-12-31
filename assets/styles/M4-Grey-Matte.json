@@ -1,0 +1,12 @@
+{
+  "id": "M4-Grey-Matte",
+  "name": "Museum Grey",
+  "background_type": "color",
+  "background_color": "#E5E5E5",
+  "padding_ratio": 0.10,
+  "bottom_bar_ratio": 0.05,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "— {{.Model}} —", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.01, "color": "#666666", "anchor": "bottom-center", "margin_y": 0.025, "margin_x": 0.0 }
+  ]
+}

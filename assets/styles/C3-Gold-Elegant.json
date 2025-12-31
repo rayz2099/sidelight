@@ -1,0 +1,12 @@
+{
+  "id": "C3-Gold-Elegant",
+  "name": "Gold Elegant",
+  "background_type": "color",
+  "background_color": "#1A1A1A",
+  "padding_ratio": 0.08,
+  "bottom_bar_ratio": 0.08,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "{{.Make}} {{.Model}}", "font_file": "MapleMono-NF-CN-Medium.ttf", "font_size": 0.014, "color": "#D4AF37", "anchor": "bottom-center", "margin_y": 0.03, "margin_x": 0.0 }
+  ]
+}

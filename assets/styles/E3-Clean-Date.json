@@ -1,0 +1,12 @@
+{
+  "id": "E3-Clean-Date",
+  "name": "Clean Date",
+  "background_type": "color",
+  "background_color": "#FFFFFF",
+  "padding_ratio": 0.03,
+  "bottom_bar_ratio": 0.06,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "{{.Date}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.015, "color": "#000000", "anchor": "bottom-right", "margin_y": 0.02, "margin_x": 0.03 }
+  ]
+}

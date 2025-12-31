@@ -1,0 +1,12 @@
+{
+  "id": "C5-Blueprint",
+  "name": "Blueprint",
+  "background_type": "color",
+  "background_color": "#003366",
+  "padding_ratio": 0.10,
+  "bottom_bar_ratio": 0.10,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "FIG 1. {{.Model}}", "font_file": "MapleMono-NF-CN-Thin.ttf", "font_size": 0.012, "color": "#FFFFFF", "anchor": "bottom-center", "margin_y": 0.04, "margin_x": 0.0 }
+  ]
+}

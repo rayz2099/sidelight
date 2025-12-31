@@ -1,0 +1,13 @@
+{
+  "id": "C2-Cyber-Neon",
+  "name": "Cyber Neon",
+  "background_type": "color",
+  "background_color": "#050510",
+  "padding_ratio": 0.05,
+  "bottom_bar_ratio": 0.08,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "{{.Model}}", "font_file": "MapleMono-NF-CN-BoldItalic.ttf", "font_size": 0.02, "color": "#00FFFF", "anchor": "bottom-left", "margin_y": 0.03, "margin_x": 0.05 },
+    { "type": "text", "content": "ISO {{.ISO}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.015, "color": "#FF00FF", "anchor": "bottom-right", "margin_y": 0.03, "margin_x": 0.05 }
+  ]
+}

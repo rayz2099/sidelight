@@ -1,0 +1,12 @@
+{
+  "id": "G4-Vivid-Glass",
+  "name": "Vivid Glass",
+  "background_type": "image_blur",
+  "blur_sigma": 25.0,
+  "padding_ratio": 0.10,
+  "bottom_bar_ratio": 0.08,
+  "elements": [
+    { "type": "image", "anchor": "center" },
+    { "type": "text", "content": "{{.FocalLength}} {{.Aperture}}", "font_file": "MapleMono-NF-CN-BoldItalic.ttf", "font_size": 0.02, "color": "#FFFFFF", "anchor": "bottom-right", "margin_y": 0.04, "margin_x": 0.10 }
+  ]
+}

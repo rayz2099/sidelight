@@ -1,0 +1,11 @@
+{
+  "id": "G5-Subtle-Border",
+  "name": "Subtle Blur Border",
+  "background_type": "image_blur",
+  "blur_sigma": 15.0,
+  "padding_ratio": 0.04,
+  "bottom_bar_ratio": 0.0,
+  "elements": [
+    { "type": "image", "anchor": "center" }
+  ]
+}
