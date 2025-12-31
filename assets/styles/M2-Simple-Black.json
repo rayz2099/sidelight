@@ -7,7 +7,7 @@
   "bottom_bar_ratio": 0.08,
   "elements": [
     { "type": "image", "anchor": "center" },
-    { "type": "text", "content": "{{.Make}} {{.Model}}", "font_file": "MapleMono-NF-CN-Bold.ttf", "font_size": 0.012, "color": "#FFFFFF", "anchor": "bottom-left", "margin_y": 0.035, "margin_x": 0.03 },
+    { "type": "text", "content": "{{.Make}} {{.Model}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.012, "color": "#FFFFFF", "anchor": "bottom-left", "margin_y": 0.035, "margin_x": 0.03 },
     { "type": "text", "content": "{{.FocalLength}} f/{{.Aperture}} {{.ShutterSpeed}} ISO{{.ISO}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.012, "color": "#999999", "anchor": "bottom-right", "margin_y": 0.035, "margin_x": 0.03 }
   ]
 }

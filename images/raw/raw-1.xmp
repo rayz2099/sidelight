@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="SideLight">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-    <rdf:Description rdf:about="" xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/" crs:ProcessVersion="11.0" crs:Exposure2012="-0.2" crs:Contrast2012="20" crs:Highlights2012="-80" crs:Shadows2012="15" crs:Whites2012="-35" crs:Blacks2012="-25" crs:Texture="10" crs:Clarity2012="15" crs:Dehaze="30" crs:Vibrance="25" crs:Saturation="5" crs:Temperature="5900" crs:Tint="10" crs:Sharpness="40"></rdf:Description>
+    <rdf:Description rdf:about="" xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/" crs:ProcessVersion="11.0" crs:Exposure2012="-0.2" crs:Contrast2012="50" crs:Highlights2012="-80" crs:Shadows2012="-50" crs:Whites2012="15" crs:Blacks2012="-25" crs:Texture="10" crs:Clarity2012="20" crs:Dehaze="10" crs:Vibrance="15" crs:Saturation="5" crs:Temperature="5200" crs:Tint="15" crs:Sharpness="40" crs:LuminanceSmoothing="10" crs:ColorNoiseReduction="10" crs:HueAdjustmentYellow="-10" crs:HueAdjustmentGreen="-20" crs:SaturationAdjustmentRed="10" crs:SaturationAdjustmentOrange="5" crs:SaturationAdjustmentGreen="30" crs:SaturationAdjustmentBlue="10" crs:LuminanceAdjustmentGreen="-15" crs:SplitToningShadowHue="300" crs:SplitToningShadowSaturation="20" crs:SplitToningHighlightHue="240" crs:SplitToningHighlightSaturation="5"></rdf:Description>
   </rdf:RDF>
 </x:xmpmeta>

@@ -7,7 +7,7 @@
   "bottom_bar_ratio": 0.10,
   "elements": [
     { "type": "image", "anchor": "center" },
-    { "type": "text", "content": "{{.Model}}", "font_file": "MapleMono-NF-CN-Bold.ttf", "font_size": 0.015, "color": "#000000", "anchor": "bottom-center", "margin_y": 0.055, "margin_x": 0.0 },
-    { "type": "text", "content": "{{.FocalLength}} · {{.Aperture}} · {{.ShutterSpeed}}", "font_file": "MapleMono-NF-CN-Light.ttf", "font_size": 0.012, "color": "#888888", "anchor": "bottom-center", "margin_y": 0.025, "margin_x": 0.0 }
+    { "type": "text", "content": "{{.Model}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.015, "color": "#000000", "anchor": "bottom-center", "margin_y": 0.055, "margin_x": 0.0 },
+    { "type": "text", "content": "{{.FocalLength}} · {{.Aperture}} · {{.ShutterSpeed}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.012, "color": "#888888", "anchor": "bottom-center", "margin_y": 0.025, "margin_x": 0.0 }
   ]
 }

@@ -7,7 +7,7 @@
   "bottom_bar_ratio": 0.15,
   "elements": [
     { "type": "image", "anchor": "top-center" },
-    { "type": "text", "content": "S I D E L I G H T", "font_file": "MapleMono-NF-CN-ExtraBold.ttf", "font_size": 0.04, "color": "#000000", "anchor": "bottom-center", "margin_y": 0.08, "margin_x": 0.0 },
+    { "type": "text", "content": "S I D E L I G H T", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.04, "color": "#000000", "anchor": "bottom-center", "margin_y": 0.08, "margin_x": 0.0 },
     { "type": "text", "content": "ISSUE 01 — {{.Date}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.008, "color": "#000000", "anchor": "bottom-center", "margin_y": 0.05, "margin_x": 0.0 }
   ]
 }

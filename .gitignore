@@ -27,5 +27,7 @@ go.work.sum
 
 
 .idea
-sidelight
+/sidelight
 images/*
+config.json
+bin/sidelight
