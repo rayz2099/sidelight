@@ -42,8 +42,8 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	// 1.5 Extract Metadata
 	metadata, err := p.extractor.ExtractMetadata(ctx, rawPath)
 	if err != nil {
-		// Log warning but continue? Or fail? 
-		// For now, let's just log it and proceed with empty metadata if possible, 
+		// Log warning but continue? Or fail?
+		// For now, let's just log it and proceed with empty metadata if possible,
 		// but since it returns error, we should probably fail or handle it.
 		// However, ExtractMetadata is robust. If it fails, maybe exiftool is missing or file is bad.
 		return nil, fmt.Errorf("metadata extraction failed: %w", err)
@@ -65,20 +65,20 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	settings.Shadows2012 = params.Shadows2012
 	settings.Whites2012 = params.Whites2012
 	settings.Blacks2012 = params.Blacks2012
-	
+
 	settings.Texture = params.Texture
 	settings.Clarity2012 = params.Clarity2012
 	settings.Dehaze = params.Dehaze
 	settings.Vibrance = params.Vibrance
 	settings.Saturation = params.Saturation
-	
+
 	settings.Temperature = params.Temperature
 	settings.Tint = params.Tint
-	
+
 	settings.Sharpness = params.Sharpness
 	settings.LuminanceSmoothing = params.LuminanceSmoothing
 	settings.ColorNoiseReduction = params.ColorNoiseReduction
-	
+
 	settings.PostCropVignetteAmount = params.PostCropVignetteAmount
 
 	// HSL - Hue

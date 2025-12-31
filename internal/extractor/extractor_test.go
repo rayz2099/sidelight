@@ -14,7 +14,7 @@ const rawPath = "../../images/raw/raw-1.ARW"
 func TestExifToolExtractor_ExtractPreview(t *testing.T) {
 	// Skip if exiftool is not in PATH (simple check)
 	// In a real env, we assume it's there or skip.
-	
+
 	if _, err := os.Stat(rawPath); os.IsNotExist(err) {
 		t.Skipf("RAW file not found at %s, skipping integration test", rawPath)
 	}

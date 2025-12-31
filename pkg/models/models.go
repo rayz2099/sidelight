@@ -2,14 +2,14 @@ package models
 
 // Metadata holds technical details extracted from the image.
 type Metadata struct {
-	Make        string `json:"make"`
-	Model       string `json:"model"`
-	Lens        string `json:"lens"`
-	ISO         int    `json:"iso"`
-	Aperture    string `json:"aperture"` // Stored as string to handle "f/1.8" etc.
+	Make         string `json:"make"`
+	Model        string `json:"model"`
+	Lens         string `json:"lens"`
+	ISO          int    `json:"iso"`
+	Aperture     string `json:"aperture"` // Stored as string to handle "f/1.8" etc.
 	ShutterSpeed string `json:"shutter_speed"`
-	FocalLength string `json:"focal_length"`
-	DateTime    string `json:"date_time"`
+	FocalLength  string `json:"focal_length"`
+	DateTime     string `json:"date_time"`
 }
 
 // GradingParams defines the color grading parameters returned by the AI.
@@ -72,11 +72,11 @@ type GradingParams struct {
 	LuminanceAdjustmentMagenta int `json:"luminance_magenta"`
 
 	// Split Toning (Simple)
-	SplitToningShadowHue        int `json:"split_shadow_hue"`
-	SplitToningShadowSaturation int `json:"split_shadow_saturation"`
-	SplitToningHighlightHue     int `json:"split_highlight_hue"`
+	SplitToningShadowHue           int `json:"split_shadow_hue"`
+	SplitToningShadowSaturation    int `json:"split_shadow_saturation"`
+	SplitToningHighlightHue        int `json:"split_highlight_hue"`
 	SplitToningHighlightSaturation int `json:"split_highlight_saturation"`
-	SplitToningBalance          int `json:"split_balance"`
+	SplitToningBalance             int `json:"split_balance"`
 }
 
 // ProcessingResult holds the outcome of processing a single file.

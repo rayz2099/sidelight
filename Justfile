@@ -9,3 +9,6 @@ install:
 
 test:
 	go test -v ./internal/...
+
+preview-styles file="images/output/output-1.jpg": build
+	@./bin/preview_all_styles.sh {{file}}

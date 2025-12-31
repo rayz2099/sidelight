@@ -98,9 +98,9 @@ type rdfDescription struct {
 
 // rdfRDF represents the <rdf:RDF> container.
 type rdfRDF struct {
-	XMLName     xml.Name        `xml:"rdf:RDF"`
-	XmlnsRdf    string          `xml:"xmlns:rdf,attr"`
-	Description *rdfDescription 
+	XMLName     xml.Name `xml:"rdf:RDF"`
+	XmlnsRdf    string   `xml:"xmlns:rdf,attr"`
+	Description *rdfDescription
 }
 
 // xmpMeta represents the root <x:xmpmeta> element.

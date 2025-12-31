@@ -36,7 +36,7 @@ func (e *ExifToolExtractor) ExtractPreview(ctx context.Context, rawPath string) 
 	// -PreviewImage: specifically target the preview image
 	// -JpgFromRaw: target high-res preview if PreviewImage is not what we want
 	// We'll try PreviewImage first as it's common.
-	
+
 	// Command: exiftool -b -PreviewImage <path>
 	cmd := exec.CommandContext(ctx, e.BinPath, "-b", "-PreviewImage", rawPath)
 	var out bytes.Buffer
@@ -70,16 +70,16 @@ func (e *ExifToolExtractor) ExtractPreview(ctx context.Context, rawPath string) 
 }
 
 type exiftoolOutput struct {
-	Make            string      `json:"Make"`
-	Model           string      `json:"Model"`
-	Lens            string      `json:"Lens"`
-	LensID          string      `json:"LensID"`
-	LensModel       string      `json:"LensModel"`
-	ISO             interface{} `json:"ISO"` // Can be int or string depending on -n
-	Aperture        interface{} `json:"Aperture"`
-	ShutterSpeed    interface{} `json:"ShutterSpeed"`
-	FocalLength     interface{} `json:"FocalLength"`
-	DateTimeOriginal string     `json:"DateTimeOriginal"`
+	Make             string      `json:"Make"`
+	Model            string      `json:"Model"`
+	Lens             string      `json:"Lens"`
+	LensID           string      `json:"LensID"`
+	LensModel        string      `json:"LensModel"`
+	ISO              interface{} `json:"ISO"` // Can be int or string depending on -n
+	Aperture         interface{} `json:"Aperture"`
+	ShutterSpeed     interface{} `json:"ShutterSpeed"`
+	FocalLength      interface{} `json:"FocalLength"`
+	DateTimeOriginal string      `json:"DateTimeOriginal"`
 }
 
 // ExtractMetadata extracts technical details from the RAW file.
@@ -89,7 +89,7 @@ func (e *ExifToolExtractor) ExtractMetadata(ctx context.Context, rawPath string)
 	// Actually, for AI context, readable strings like "1/100" are better than 0.01.
 	// So we will NOT use -n generally, but maybe for specific calculations.
 	// Let's stick to standard formatting (human readable) as it's for LLM context.
-	
+
 	args := []string{
 		"-j",
 		"-Make",
@@ -125,7 +125,7 @@ func (e *ExifToolExtractor) ExtractMetadata(ctx context.Context, rawPath string)
 	}
 
 	o := outputs[0]
-	
+
 	// Determine best lens string
 	lens := o.Lens
 	if lens == "" {
@@ -142,7 +142,7 @@ func (e *ExifToolExtractor) ExtractMetadata(ctx context.Context, rawPath string)
 		}
 		return fmt.Sprintf("%v", v)
 	}
-	
+
 	// Helper to int safely
 	toInt := func(v interface{}) int {
 		if v == nil {
