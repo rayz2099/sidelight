@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	"sidelight/pkg/models"
+
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
-	"sidelight/pkg/models"
 )
 
 type GeminiClient struct {
@@ -16,16 +17,22 @@ type GeminiClient struct {
 	model  *genai.GenerativeModel
 }
 
-func NewGeminiClient(ctx context.Context, apiKey string) (*GeminiClient, error) {
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+func NewGeminiClient(ctx context.Context, apiKey, endpoint string, modelName string) (*GeminiClient, error) {
+	opts := []option.ClientOption{option.WithAPIKey(apiKey)}
+	if endpoint != "" {
+		opts = append(opts, option.WithEndpoint(endpoint))
+	}
+	if len(modelName) == 0 {
+		modelName = "gemini-2.5-flash"
+	}
+	client, err := genai.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gemini client: %w", err)
 	}
 
-	model := client.GenerativeModel("gemini-flash-latest")
-	// Set the response MIME type to JSON
-	model.ResponseMIMEType = "application/json"
-	
+	model := client.GenerativeModel(modelName)
+	// 注意：不设置 ResponseMIMEType，因为某些代理可能不支持
+	// 改为在 prompt 中明确要求 JSON 格式
 	return &GeminiClient{
 		client: client,
 		model:  model,
@@ -118,11 +125,11 @@ var styles = map[string]string{
 	"retro-70s": "1970s aesthetic. Strong yellow/orange cast, faded shadows, slightly blurry, vintage warmth.",
 
 	// --- Cinematic / Art ---
-	"cinematic":   "Movie look. Moody lighting, wide dynamic range but controlled contrast. Intentional color grading.",
-	"teal-orange": "Blockbuster movie look. Push shadows towards teal/cyan and highlights towards orange/skin tones.",
-	"cyberpunk":   "Futuristic, neon look. Shift white balance towards cool/magenta. High contrast. Emphasize teal, pink, and purple.",
-	"matte":       "Low contrast, faded look. Lift the blacks significantly to create a matte finish. Soft, desaturated colors.",
-	"dreamy":      "Ethereal, glowy look. Reduce clarity and dehaze slightly (negative values). Soft, pastel colors. High key.",
+	"cinematic":    "Movie look. Moody lighting, wide dynamic range but controlled contrast. Intentional color grading.",
+	"teal-orange":  "Blockbuster movie look. Push shadows towards teal/cyan and highlights towards orange/skin tones.",
+	"cyberpunk":    "Futuristic, neon look. Shift white balance towards cool/magenta. High contrast. Emphasize teal, pink, and purple.",
+	"matte":        "Low contrast, faded look. Lift the blacks significantly to create a matte finish. Soft, desaturated colors.",
+	"dreamy":       "Ethereal, glowy look. Reduce clarity and dehaze slightly (negative values). Soft, pastel colors. High key.",
 	"wes-anderson": "Pastel color palette, symmetrical feel (in tone), high saturation but soft contrast, warm and quirky.",
 
 	// --- Scenery / Environment ---
@@ -155,7 +162,7 @@ func (g *GeminiClient) AnalyzeImage(ctx context.Context, imageData []byte, metad
 - Shutter Speed: %s
 - Date: %s`, metadata.Make, metadata.Model, metadata.Lens, metadata.ISO, metadata.Aperture, metadata.ShutterSpeed, metadata.DateTime)
 
-	fullInstruction := fmt.Sprintf(`%s
+	fullPrompt := fmt.Sprintf(`%s
 
 %s
     
@@ -165,13 +172,10 @@ User Specific Instructions: %s
 
 Output ONLY the JSON object.`, systemInstruction, metadataInfo, styleInstruction, opts.UserPrompt)
 
-	g.model.SystemInstruction = &genai.Content{
-		Parts: []genai.Part{genai.Text(fullInstruction)},
-	}
-
 	prompt := []genai.Part{
 		genai.ImageData("jpeg", imageData),
-		genai.Text("Please grade this image."),
+		genai.Text(fullPrompt),
+		genai.Text("Please grade this image and output the result in the specified JSON format."),
 	}
 
 	resp, err := g.model.GenerateContent(ctx, prompt...)
