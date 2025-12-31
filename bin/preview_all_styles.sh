@@ -33,19 +33,30 @@ for style_file in assets/styles/*.json; do
   
   # Run sidelight frame
   # This generates [NAME]_framed.jpg by default
-  ./bin/sidelight frame "$IMAGE" --style "$style_id" > /dev/null 2>&1
-  
-  # Rename the output file to [NAME]_[StyleID].jpg
-  # Note: sidelight frame defaults to jpg output unless -f is specified.
-  GENERATED_FILE="${DIR}/${NAME}_framed.jpg"
-  TARGET_FILE="${DIR}/${NAME}_${style_id}.jpg"
-  
-  if [ -f "$GENERATED_FILE" ]; then
-    mv "$GENERATED_FILE" "$TARGET_FILE"
-    echo "✅ Saved to $(basename "$TARGET_FILE")"
+  # Capture output to a temporary log file
+  LOG_FILE=$(mktemp)
+  if ./bin/sidelight frame "$IMAGE" --style "$style_id" > "$LOG_FILE" 2>&1; then
+    # Success path
+    GENERATED_FILE="${DIR}/${NAME}_framed.jpg"
+    TARGET_FILE="${DIR}/${NAME}_${style_id}.jpg"
+    
+    if [ -f "$GENERATED_FILE" ]; then
+      mv "$GENERATED_FILE" "$TARGET_FILE"
+      echo "✅ Saved to $(basename "$TARGET_FILE")"
+    else
+      echo "❌ Failed (Output file not found)"
+      echo "--- Log Output ---"
+      cat "$LOG_FILE"
+      echo "------------------"
+    fi
   else
-    echo "❌ Failed"
+    # Failure path
+    echo "❌ Failed (Command error)"
+    echo "--- Log Output ---"
+    cat "$LOG_FILE"
+    echo "------------------"
   fi
+  rm -f "$LOG_FILE"
 done
 
 echo ""

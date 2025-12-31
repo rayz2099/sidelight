@@ -13,7 +13,7 @@
     {
       "type": "text",
       "content": "SHOT ON {{.Model}}",
-      "font_file": "MapleMono-NF-CN-Bold.ttf",
+      "font_file": "MapleMono-NF-CN-Regular.ttf",
       "font_size": 0.012,
       "color": "#888888",
       "anchor": "bottom-center",

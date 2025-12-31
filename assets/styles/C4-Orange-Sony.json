@@ -7,7 +7,7 @@
   "bottom_bar_ratio": 0.10,
   "elements": [
     { "type": "image", "anchor": "center" },
-    { "type": "text", "content": "ALPHA 7", "font_file": "MapleMono-NF-CN-Bold.ttf", "font_size": 0.018, "color": "#FF6600", "anchor": "bottom-left", "margin_y": 0.04, "margin_x": 0.03 },
+    { "type": "text", "content": "ALPHA 7", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.018, "color": "#FF6600", "anchor": "bottom-left", "margin_y": 0.04, "margin_x": 0.03 },
     { "type": "text", "content": "{{.Lens}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.01, "color": "#000000", "anchor": "bottom-right", "margin_y": 0.045, "margin_x": 0.03 }
   ]
 }

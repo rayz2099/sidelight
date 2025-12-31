@@ -7,6 +7,6 @@
   "bottom_bar_ratio": 0.20,
   "elements": [
     { "type": "image", "anchor": "center" },
-    { "type": "text", "content": "{{.Date}}", "font_file": "MapleMono-NF-CN-Italic.ttf", "font_size": 0.02, "color": "#444444", "anchor": "bottom-left", "margin_y": 0.10, "margin_x": 0.08 }
+    { "type": "text", "content": "{{.Date}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.02, "color": "#444444", "anchor": "bottom-left", "margin_y": 0.10, "margin_x": 0.08 }
   ]
 }

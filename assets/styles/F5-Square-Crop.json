@@ -7,6 +7,6 @@
   "bottom_bar_ratio": 0.12,
   "elements": [
     { "type": "image", "anchor": "center" },
-    { "type": "text", "content": "#{{.Make}} #{{.Model}}", "font_file": "MapleMono-NF-CN-Italic.ttf", "font_size": 0.012, "color": "#999999", "anchor": "bottom-right", "margin_y": 0.04, "margin_x": 0.08 }
+    { "type": "text", "content": "#{{.Make}} #{{.Model}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.012, "color": "#999999", "anchor": "bottom-right", "margin_y": 0.04, "margin_x": 0.08 }
   ]
 }

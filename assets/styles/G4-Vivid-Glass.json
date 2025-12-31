@@ -7,6 +7,6 @@
   "bottom_bar_ratio": 0.08,
   "elements": [
     { "type": "image", "anchor": "center" },
-    { "type": "text", "content": "{{.FocalLength}} {{.Aperture}}", "font_file": "MapleMono-NF-CN-BoldItalic.ttf", "font_size": 0.02, "color": "#FFFFFF", "anchor": "bottom-right", "margin_y": 0.04, "margin_x": 0.10 }
+    { "type": "text", "content": "{{.FocalLength}} {{.Aperture}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.02, "color": "#FFFFFF", "anchor": "bottom-right", "margin_y": 0.04, "margin_x": 0.10 }
   ]
 }
