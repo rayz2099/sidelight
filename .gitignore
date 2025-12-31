@@ -30,3 +30,4 @@ go.work.sum
 /sidelight
 images/*
 config.json
+bin/sidelight
