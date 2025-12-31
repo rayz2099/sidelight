@@ -3,13 +3,16 @@ package extractor
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os/exec"
+	"sidelight/pkg/models"
 )
 
 // Extractor defines the interface for extracting previews from RAW files.
 type Extractor interface {
 	ExtractPreview(ctx context.Context, rawPath string) ([]byte, error)
+	ExtractMetadata(ctx context.Context, rawPath string) (*models.Metadata, error)
 }
 
 // ExifToolExtractor implements Extractor using the external exiftool command.
@@ -64,4 +67,112 @@ func (e *ExifToolExtractor) ExtractPreview(ctx context.Context, rawPath string) 
 	}
 
 	return data, nil
+}
+
+type exiftoolOutput struct {
+	Make            string      `json:"Make"`
+	Model           string      `json:"Model"`
+	Lens            string      `json:"Lens"`
+	LensID          string      `json:"LensID"`
+	LensModel       string      `json:"LensModel"`
+	ISO             interface{} `json:"ISO"` // Can be int or string depending on -n
+	Aperture        interface{} `json:"Aperture"`
+	ShutterSpeed    interface{} `json:"ShutterSpeed"`
+	FocalLength     interface{} `json:"FocalLength"`
+	DateTimeOriginal string     `json:"DateTimeOriginal"`
+}
+
+// ExtractMetadata extracts technical details from the RAW file.
+func (e *ExifToolExtractor) ExtractMetadata(ctx context.Context, rawPath string) (*models.Metadata, error) {
+	// -j: JSON output
+	// -n: Numerical output for values where appropriate (prevents "1/100" string for shutter speed if it can be decimal, but we might want the string for readable context.
+	// Actually, for AI context, readable strings like "1/100" are better than 0.01.
+	// So we will NOT use -n generally, but maybe for specific calculations.
+	// Let's stick to standard formatting (human readable) as it's for LLM context.
+	
+	args := []string{
+		"-j",
+		"-Make",
+		"-Model",
+		"-Lens",
+		"-LensID",
+		"-LensModel",
+		"-ISO",
+		"-Aperture",
+		"-ShutterSpeed",
+		"-FocalLength",
+		"-DateTimeOriginal",
+		rawPath,
+	}
+
+	cmd := exec.CommandContext(ctx, e.BinPath, args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("exiftool metadata extraction failed: %w (stderr: %s)", err, stderr.String())
+	}
+
+	var outputs []exiftoolOutput
+	if err := json.Unmarshal(out.Bytes(), &outputs); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal exiftool output: %w", err)
+	}
+
+	if len(outputs) == 0 {
+		return nil, fmt.Errorf("no metadata found for %s", rawPath)
+	}
+
+	o := outputs[0]
+	
+	// Determine best lens string
+	lens := o.Lens
+	if lens == "" {
+		lens = o.LensModel
+	}
+	if lens == "" {
+		lens = o.LensID
+	}
+
+	// Helper to stringify interface{} safely
+	toString := func(v interface{}) string {
+		if v == nil {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+	
+	// Helper to int safely
+	toInt := func(v interface{}) int {
+		if v == nil {
+			return 0
+		}
+		switch val := v.(type) {
+		case float64:
+			return int(val)
+		case int:
+			return val
+		case string:
+			// try parsing if strictly needed, but usually ISO is just a number in JSON if simple
+			// but exiftool without -n might give "100" or "Hi 100".
+			// For now, let's just fmt.Sscanf if it's a string, or 0.
+			var i int
+			fmt.Sscanf(val, "%d", &i)
+			return i
+		default:
+			return 0
+		}
+	}
+
+	return &models.Metadata{
+		Make:         o.Make,
+		Model:        o.Model,
+		Lens:         lens,
+		ISO:          toInt(o.ISO),
+		Aperture:     toString(o.Aperture),
+		ShutterSpeed: toString(o.ShutterSpeed),
+		FocalLength:  toString(o.FocalLength),
+		DateTime:     o.DateTimeOriginal,
+	}, nil
 }

@@ -39,8 +39,19 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 		return nil, fmt.Errorf("extraction failed: %w", err)
 	}
 
+	// 1.5 Extract Metadata
+	metadata, err := p.extractor.ExtractMetadata(ctx, rawPath)
+	if err != nil {
+		// Log warning but continue? Or fail? 
+		// For now, let's just log it and proceed with empty metadata if possible, 
+		// but since it returns error, we should probably fail or handle it.
+		// However, ExtractMetadata is robust. If it fails, maybe exiftool is missing or file is bad.
+		return nil, fmt.Errorf("metadata extraction failed: %w", err)
+	}
+	result.Metadata = *metadata
+
 	// 2. Analyze with AI
-	params, err := p.aiClient.AnalyzeImage(ctx, previewData, opts)
+	params, err := p.aiClient.AnalyzeImage(ctx, previewData, *metadata, opts)
 	if err != nil {
 		return nil, fmt.Errorf("ai analysis failed: %w", err)
 	}
@@ -54,14 +65,58 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	settings.Shadows2012 = params.Shadows2012
 	settings.Whites2012 = params.Whites2012
 	settings.Blacks2012 = params.Blacks2012
+	
 	settings.Texture = params.Texture
 	settings.Clarity2012 = params.Clarity2012
 	settings.Dehaze = params.Dehaze
 	settings.Vibrance = params.Vibrance
 	settings.Saturation = params.Saturation
+	
 	settings.Temperature = params.Temperature
 	settings.Tint = params.Tint
+	
 	settings.Sharpness = params.Sharpness
+	settings.LuminanceSmoothing = params.LuminanceSmoothing
+	settings.ColorNoiseReduction = params.ColorNoiseReduction
+	
+	settings.PostCropVignetteAmount = params.PostCropVignetteAmount
+
+	// HSL - Hue
+	settings.HueAdjustmentRed = params.HueAdjustmentRed
+	settings.HueAdjustmentOrange = params.HueAdjustmentOrange
+	settings.HueAdjustmentYellow = params.HueAdjustmentYellow
+	settings.HueAdjustmentGreen = params.HueAdjustmentGreen
+	settings.HueAdjustmentAqua = params.HueAdjustmentAqua
+	settings.HueAdjustmentBlue = params.HueAdjustmentBlue
+	settings.HueAdjustmentPurple = params.HueAdjustmentPurple
+	settings.HueAdjustmentMagenta = params.HueAdjustmentMagenta
+
+	// HSL - Saturation
+	settings.SaturationAdjustmentRed = params.SaturationAdjustmentRed
+	settings.SaturationAdjustmentOrange = params.SaturationAdjustmentOrange
+	settings.SaturationAdjustmentYellow = params.SaturationAdjustmentYellow
+	settings.SaturationAdjustmentGreen = params.SaturationAdjustmentGreen
+	settings.SaturationAdjustmentAqua = params.SaturationAdjustmentAqua
+	settings.SaturationAdjustmentBlue = params.SaturationAdjustmentBlue
+	settings.SaturationAdjustmentPurple = params.SaturationAdjustmentPurple
+	settings.SaturationAdjustmentMagenta = params.SaturationAdjustmentMagenta
+
+	// HSL - Luminance
+	settings.LuminanceAdjustmentRed = params.LuminanceAdjustmentRed
+	settings.LuminanceAdjustmentOrange = params.LuminanceAdjustmentOrange
+	settings.LuminanceAdjustmentYellow = params.LuminanceAdjustmentYellow
+	settings.LuminanceAdjustmentGreen = params.LuminanceAdjustmentGreen
+	settings.LuminanceAdjustmentAqua = params.LuminanceAdjustmentAqua
+	settings.LuminanceAdjustmentBlue = params.LuminanceAdjustmentBlue
+	settings.LuminanceAdjustmentPurple = params.LuminanceAdjustmentPurple
+	settings.LuminanceAdjustmentMagenta = params.LuminanceAdjustmentMagenta
+
+	// Split Toning
+	settings.SplitToningShadowHue = params.SplitToningShadowHue
+	settings.SplitToningShadowSaturation = params.SplitToningShadowSaturation
+	settings.SplitToningHighlightHue = params.SplitToningHighlightHue
+	settings.SplitToningHighlightSaturation = params.SplitToningHighlightSaturation
+	settings.SplitToningBalance = params.SplitToningBalance
 
 	// 4. Marshal XMP
 	xmpData, err := xmp.Marshal(settings)

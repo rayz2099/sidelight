@@ -14,6 +14,13 @@ func TestMarshal(t *testing.T) {
 	settings.Temperature = 5500
 	settings.Tint = 10
 	settings.Vibrance = 15
+	
+	// New fields
+	settings.PostCropVignetteAmount = -20
+	settings.HueAdjustmentRed = 10
+	settings.SaturationAdjustmentBlue = -15
+	settings.SplitToningShadowHue = 200
+	settings.SplitToningShadowSaturation = 25
 
 	data, err := xmp.Marshal(settings)
 	if err != nil {
@@ -52,6 +59,11 @@ func TestMarshal(t *testing.T) {
 		{`crs:Temperature="5500"`},
 		{`crs:Tint="10"`},
 		{`crs:Vibrance="15"`},
+		{`crs:PostCropVignetteAmount="-20"`},
+		{`crs:HueAdjustmentRed="10"`},
+		{`crs:SaturationAdjustmentBlue="-15"`},
+		{`crs:SplitToningShadowHue="200"`},
+		{`crs:SplitToningShadowSaturation="25"`},
 	}
 
 	for _, check := range valueChecks {

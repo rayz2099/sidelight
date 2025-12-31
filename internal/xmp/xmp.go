@@ -46,6 +46,46 @@ type CameraRawSettings struct {
 	Sharpness           int `xml:"crs:Sharpness,attr,omitempty"`
 	LuminanceSmoothing  int `xml:"crs:LuminanceSmoothing,attr,omitempty"`
 	ColorNoiseReduction int `xml:"crs:ColorNoiseReduction,attr,omitempty"`
+
+	// Vignette
+	PostCropVignetteAmount int `xml:"crs:PostCropVignetteAmount,attr,omitempty"`
+
+	// HSL - Hue
+	HueAdjustmentRed     int `xml:"crs:HueAdjustmentRed,attr,omitempty"`
+	HueAdjustmentOrange  int `xml:"crs:HueAdjustmentOrange,attr,omitempty"`
+	HueAdjustmentYellow  int `xml:"crs:HueAdjustmentYellow,attr,omitempty"`
+	HueAdjustmentGreen   int `xml:"crs:HueAdjustmentGreen,attr,omitempty"`
+	HueAdjustmentAqua    int `xml:"crs:HueAdjustmentAqua,attr,omitempty"`
+	HueAdjustmentBlue    int `xml:"crs:HueAdjustmentBlue,attr,omitempty"`
+	HueAdjustmentPurple  int `xml:"crs:HueAdjustmentPurple,attr,omitempty"`
+	HueAdjustmentMagenta int `xml:"crs:HueAdjustmentMagenta,attr,omitempty"`
+
+	// HSL - Saturation
+	SaturationAdjustmentRed     int `xml:"crs:SaturationAdjustmentRed,attr,omitempty"`
+	SaturationAdjustmentOrange  int `xml:"crs:SaturationAdjustmentOrange,attr,omitempty"`
+	SaturationAdjustmentYellow  int `xml:"crs:SaturationAdjustmentYellow,attr,omitempty"`
+	SaturationAdjustmentGreen   int `xml:"crs:SaturationAdjustmentGreen,attr,omitempty"`
+	SaturationAdjustmentAqua    int `xml:"crs:SaturationAdjustmentAqua,attr,omitempty"`
+	SaturationAdjustmentBlue    int `xml:"crs:SaturationAdjustmentBlue,attr,omitempty"`
+	SaturationAdjustmentPurple  int `xml:"crs:SaturationAdjustmentPurple,attr,omitempty"`
+	SaturationAdjustmentMagenta int `xml:"crs:SaturationAdjustmentMagenta,attr,omitempty"`
+
+	// HSL - Luminance
+	LuminanceAdjustmentRed     int `xml:"crs:LuminanceAdjustmentRed,attr,omitempty"`
+	LuminanceAdjustmentOrange  int `xml:"crs:LuminanceAdjustmentOrange,attr,omitempty"`
+	LuminanceAdjustmentYellow  int `xml:"crs:LuminanceAdjustmentYellow,attr,omitempty"`
+	LuminanceAdjustmentGreen   int `xml:"crs:LuminanceAdjustmentGreen,attr,omitempty"`
+	LuminanceAdjustmentAqua    int `xml:"crs:LuminanceAdjustmentAqua,attr,omitempty"`
+	LuminanceAdjustmentBlue    int `xml:"crs:LuminanceAdjustmentBlue,attr,omitempty"`
+	LuminanceAdjustmentPurple  int `xml:"crs:LuminanceAdjustmentPurple,attr,omitempty"`
+	LuminanceAdjustmentMagenta int `xml:"crs:LuminanceAdjustmentMagenta,attr,omitempty"`
+
+	// Split Toning
+	SplitToningShadowHue           int `xml:"crs:SplitToningShadowHue,attr,omitempty"`
+	SplitToningShadowSaturation    int `xml:"crs:SplitToningShadowSaturation,attr,omitempty"`
+	SplitToningHighlightHue        int `xml:"crs:SplitToningHighlightHue,attr,omitempty"`
+	SplitToningHighlightSaturation int `xml:"crs:SplitToningHighlightSaturation,attr,omitempty"`
+	SplitToningBalance             int `xml:"crs:SplitToningBalance,attr,omitempty"`
 }
 
 // rdfDescription represents the inner content of the RDF.

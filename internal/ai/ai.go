@@ -7,7 +7,7 @@ import (
 
 // Client defines the interface for AI color grading services.
 type Client interface {
-	AnalyzeImage(ctx context.Context, imageData []byte, opts AnalysisOptions) (*models.GradingParams, error)
+	AnalyzeImage(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.GradingParams, error)
 }
 
 // AnalysisOptions contains parameters to control the AI analysis.

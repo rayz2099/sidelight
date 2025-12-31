@@ -38,7 +38,7 @@ func (g *GeminiClient) Close() error {
 
 const systemInstruction = `You are a professional photo color grader. 
 Analyze the provided image and provide Adobe Camera Raw color grading parameters in JSON format.
-The parameters should aim for a natural, high-quality look.
+The parameters should aim for a natural, high-quality look unless a specific style is requested.
 Output ONLY the JSON object.
 
 Schema:
@@ -56,7 +56,43 @@ Schema:
   "saturation": int (range -100 to 100),
   "temperature": int (range 2000 to 50000),
   "tint": int (range -150 to 150),
-  "sharpness": int (range 0 to 150)
+  "sharpness": int (range 0 to 150),
+  "luminance_noise_reduction": int (range 0 to 100),
+  "color_noise_reduction": int (range 0 to 100),
+  "vignette_amount": int (range -100 to 0, negative values darken corners),
+  
+  "hue_red": int (range -100 to 100),
+  "hue_orange": int (range -100 to 100),
+  "hue_yellow": int (range -100 to 100),
+  "hue_green": int (range -100 to 100),
+  "hue_aqua": int (range -100 to 100),
+  "hue_blue": int (range -100 to 100),
+  "hue_purple": int (range -100 to 100),
+  "hue_magenta": int (range -100 to 100),
+
+  "saturation_red": int (range -100 to 100),
+  "saturation_orange": int (range -100 to 100),
+  "saturation_yellow": int (range -100 to 100),
+  "saturation_green": int (range -100 to 100),
+  "saturation_aqua": int (range -100 to 100),
+  "saturation_blue": int (range -100 to 100),
+  "saturation_purple": int (range -100 to 100),
+  "saturation_magenta": int (range -100 to 100),
+
+  "luminance_red": int (range -100 to 100),
+  "luminance_orange": int (range -100 to 100),
+  "luminance_yellow": int (range -100 to 100),
+  "luminance_green": int (range -100 to 100),
+  "luminance_aqua": int (range -100 to 100),
+  "luminance_blue": int (range -100 to 100),
+  "luminance_purple": int (range -100 to 100),
+  "luminance_magenta": int (range -100 to 100),
+
+  "split_shadow_hue": int (range 0 to 360),
+  "split_shadow_saturation": int (range 0 to 100),
+  "split_highlight_hue": int (range 0 to 360),
+  "split_highlight_saturation": int (range 0 to 100),
+  "split_balance": int (range -100 to 100)
 }`
 
 // styles maps style names to detailed prompting instructions.
@@ -105,19 +141,29 @@ var styles = map[string]string{
 	"product":          "Clean, commercial look. Neutral white balance (pure whites). Sharp, well-lit, accurate colors.",
 }
 
-func (g *GeminiClient) AnalyzeImage(ctx context.Context, imageData []byte, opts AnalysisOptions) (*models.GradingParams, error) {
+func (g *GeminiClient) AnalyzeImage(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.GradingParams, error) {
 	styleInstruction := styles["natural"] // Default
 	if instruction, ok := styles[opts.Style]; ok {
 		styleInstruction = instruction
 	}
 
+	metadataInfo := fmt.Sprintf(`Image Metadata:
+- Camera: %s %s
+- Lens: %s
+- ISO: %d
+- Aperture: %s
+- Shutter Speed: %s
+- Date: %s`, metadata.Make, metadata.Model, metadata.Lens, metadata.ISO, metadata.Aperture, metadata.ShutterSpeed, metadata.DateTime)
+
 	fullInstruction := fmt.Sprintf(`%s
+
+%s
     
 Current Style Goal: %s
 
 User Specific Instructions: %s
 
-Output ONLY the JSON object.`, systemInstruction, styleInstruction, opts.UserPrompt)
+Output ONLY the JSON object.`, systemInstruction, metadataInfo, styleInstruction, opts.UserPrompt)
 
 	g.model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{genai.Text(fullInstruction)},
