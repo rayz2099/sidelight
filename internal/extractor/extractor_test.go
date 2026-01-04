@@ -63,3 +63,27 @@ func TestExifToolExtractor_ExtractMetadata(t *testing.T) {
 		t.Log("Warning: ISO is 0, this might be valid but unusual")
 	}
 }
+
+func TestExifToolExtractor_ExtractPreview_JPG(t *testing.T) {
+	const jpgPath = "../../docs/images/input-1.jpg"
+	if _, err := os.Stat(jpgPath); os.IsNotExist(err) {
+		t.Skipf("JPG file not found at %s, skipping test", jpgPath)
+	}
+
+	ext := extractor.NewExifToolExtractor()
+	data, err := ext.ExtractPreview(context.Background(), jpgPath)
+	if err != nil {
+		t.Fatalf("Failed to extract preview from JPG: %v", err)
+	}
+
+	if len(data) == 0 {
+		t.Fatal("Extracted data is empty")
+	}
+
+	// Basic check for JPEG header
+	if len(data) < 2 || data[0] != 0xFF || data[1] != 0xD8 {
+		t.Errorf("Extracted data does not look like a JPEG (header: %X %X)", data[0], data[1])
+	}
+
+	t.Logf("Successfully extracted %d bytes from %s", len(data), jpgPath)
+}

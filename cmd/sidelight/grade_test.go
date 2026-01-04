@@ -14,6 +14,7 @@ func TestProcessGrading(t *testing.T) {
 
 	// 手动构造 Gemini Client
 	apiKey := "sk-46ea1b91490847db83461a03139db840"
+	endpoint := ""
 	modelName := "gemini-2.5-flash"
 
 	aiClient, err := ai.NewGeminiClient(ctx, apiKey, endpoint, modelName)

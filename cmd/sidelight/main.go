@@ -12,14 +12,10 @@ var cfgFile string
 
 func main() {
 	var rootCmd = &cobra.Command{
-		Use:   "sidelight [command]",
-		Short: "SideLight is an AI-powered color grading tool for RAW photos",
-		Long: `SideLight helps you speed up your photography workflow.
-
-It offers three main tools:
-1. grade: Extracts preview, analyzes it with AI, and generates an XMP sidecar for editing.
-2. frame: Generates a beautiful preview image with a border and EXIF data.
-3. export: Quickly extracts the embedded full-size JPEG preview from RAW files.`,
+		Use:   "sidelight",
+		Short: "SideLight is an AI-powered color grading tool for photos",
+		Long: `SideLight uses Gemini AI to analyze your photos and generate professional color grading.
+It supports RAW files (ARW, NEF, CR3, etc.) and standard formats (JPG, PNG).`,
 	}
 
 	cobra.OnInitialize(initConfig)

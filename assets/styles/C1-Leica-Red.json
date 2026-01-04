@@ -3,11 +3,11 @@
   "name": "Leica Red",
   "background_type": "color",
   "background_color": "#111111",
-  "padding_ratio": 0.04,
-  "bottom_bar_ratio": 0.10,
+  "padding_ratio": 0.03,
+  "bottom_bar_ratio": 0.08,
   "elements": [
     { "type": "image", "anchor": "center" },
-    { "type": "text", "content": "{{.Model}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.018, "color": "#FF0000", "anchor": "bottom-left", "margin_y": 0.04, "margin_x": 0.04 },
-    { "type": "text", "content": "SUMMILUX-M", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.012, "color": "#888888", "anchor": "bottom-right", "margin_y": 0.04, "margin_x": 0.04 }
+    { "type": "text", "content": "{{.Model}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.016, "color": "#FF0000", "anchor": "bottom-left", "margin_y": 0.025, "margin_x": 0.03 },
+    { "type": "text", "content": "SUMMILUX-M", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.012, "color": "#888888", "anchor": "bottom-right", "margin_y": 0.025, "margin_x": 0.03 }
   ]
 }

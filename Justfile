@@ -4,7 +4,7 @@ default:
 build:
 	go build -o bin/sidelight ./cmd/sidelight
 
-install:
+install: build
 	go install ./cmd/sidelight
 
 test:

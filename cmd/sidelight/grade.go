@@ -23,8 +23,8 @@ var (
 
 var gradeCmd = &cobra.Command{
 	Use:   "grade [files...]",
-	Short: "AI-powered color grading for RAW photos",
-	Long:  `Analyze RAW photos using Gemini AI to generate XMP sidecar files with professional color grading parameters.`,
+	Short: "AI-powered color grading for photos (RAW & Standard)",
+	Long:  `Analyze photos (RAW, JPG, PNG) using Gemini AI to generate XMP sidecar files with professional color grading parameters.`,
 	Args:  cobra.MinimumNArgs(1),
 	Run:   runGrade,
 }
@@ -160,7 +160,7 @@ func runGrade(cmd *cobra.Command, args []string) {
 
 	files := collectFiles(args)
 	if len(files) == 0 {
-		log.Fatal("No RAW files found to process.")
+		log.Fatal("No supported files found to process.")
 	}
 
 	params := GradeParams{

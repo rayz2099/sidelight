@@ -19,6 +19,9 @@ const (
 // These map directly to attributes in the rdf:Description element.
 type CameraRawSettings struct {
 	ProcessVersion string `xml:"crs:ProcessVersion,attr,omitempty"`
+	HasSettings    string `xml:"crs:HasSettings,attr,omitempty"`
+	AlreadyApplied string `xml:"crs:AlreadyApplied,attr,omitempty"`
+	CameraProfile  string `xml:"crs:CameraProfile,attr,omitempty"`
 
 	// Basic Tone
 	Exposure2012   float64 `xml:"crs:Exposure2012,attr,omitempty"`
@@ -115,6 +118,8 @@ type xmpMeta struct {
 func NewCameraRawSettings() CameraRawSettings {
 	return CameraRawSettings{
 		ProcessVersion: "11.0",
+		HasSettings:    "True",
+		AlreadyApplied: "False",
 	}
 }
 

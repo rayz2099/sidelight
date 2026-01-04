@@ -5,14 +5,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"sidelight/pkg/models"
 )
 
-// Extractor defines the interface for extracting previews from RAW files.
+// Extractor defines the interface for extracting previews from RAW files or reading standard images.
 type Extractor interface {
 	ExtractPreview(ctx context.Context, rawPath string) ([]byte, error)
 	ExtractMetadata(ctx context.Context, rawPath string) (*models.Metadata, error)
+	EmbedXMP(ctx context.Context, imagePath, xmpPath string) error
 }
 
 // ExifToolExtractor implements Extractor using the external exiftool command.
@@ -28,9 +33,15 @@ func NewExifToolExtractor() *ExifToolExtractor {
 	}
 }
 
-// ExtractPreview extracts the embedded preview image from a RAW file.
-// It uses exiftool to extract the binary data of the PreviewImage or JpgFromRaw.
+// ExtractPreview returns the image data for analysis.
+// For standard images (JPG, PNG), it reads the file directly.
+// For RAW files, it uses exiftool to extract the embedded preview image.
 func (e *ExifToolExtractor) ExtractPreview(ctx context.Context, rawPath string) ([]byte, error) {
+	ext := strings.ToLower(filepath.Ext(rawPath))
+	if ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
+		return os.ReadFile(rawPath)
+	}
+
 	// Attempt to get PreviewImage first, then fallback to JpgFromRaw if needed.
 	// -b: output binary data
 	// -PreviewImage: specifically target the preview image
@@ -82,7 +93,7 @@ type exiftoolOutput struct {
 	DateTimeOriginal string      `json:"DateTimeOriginal"`
 }
 
-// ExtractMetadata extracts technical details from the RAW file.
+// ExtractMetadata extracts technical details from the image file.
 func (e *ExifToolExtractor) ExtractMetadata(ctx context.Context, rawPath string) (*models.Metadata, error) {
 	// -j: JSON output
 	// -n: Numerical output for values where appropriate (prevents "1/100" string for shutter speed if it can be decimal, but we might want the string for readable context.
@@ -175,4 +186,28 @@ func (e *ExifToolExtractor) ExtractMetadata(ctx context.Context, rawPath string)
 		FocalLength:  toString(o.FocalLength),
 		DateTime:     o.DateTimeOriginal,
 	}, nil
+}
+
+// EmbedXMP embeds the XMP metadata from xmpPath into the image at imagePath.
+func (e *ExifToolExtractor) EmbedXMP(ctx context.Context, imagePath, xmpPath string) error {
+	// Command: exiftool -overwrite_original -tagsfromfile <xmpPath> -all:all <imagePath>
+	// This copies all tags from the XMP sidecar into the image file.
+	// We use -overwrite_original to avoid creating _original backup files, assuming the user knows this modifies the file.
+	args := []string{
+		"-overwrite_original",
+		"-tagsfromfile", xmpPath,
+		"-all:all",
+		imagePath,
+	}
+
+	cmd := exec.CommandContext(ctx, e.BinPath, args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("exiftool embed failed: %w (stderr: %s)", err, stderr.String())
+	}
+	return nil
 }

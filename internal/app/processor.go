@@ -27,7 +27,7 @@ func NewProcessor(ext extractor.Extractor, ai ai.Client) *Processor {
 	}
 }
 
-// ProcessFile handles a single RAW file.
+// ProcessFile handles a single photo file (RAW or standard).
 func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.AnalysisOptions) (*models.ProcessingResult, error) {
 	result := &models.ProcessingResult{
 		SourcePath: rawPath,
@@ -59,6 +59,20 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 
 	// 3. Map params to XMP settings
 	settings := xmp.NewCameraRawSettings()
+
+	// Special handling for non-RAW files (JPG/PNG)
+	// AI generates absolute Kelvin values (e.g., 5000) for Temperature.
+	// For non-RAW files, XMP expects relative values (-100 to +100).
+	// Applying 5000 to a JPG causes Lightroom to crash or the image to disappear.
+	// Since we can't easily convert absolute to relative without original metadata,
+	// we disable WB adjustments for non-RAW files to ensure safety.
+	checkExt := strings.ToLower(strings.TrimSpace(filepath.Ext(rawPath)))
+	if checkExt == ".jpg" || checkExt == ".jpeg" || checkExt == ".png" {
+		params.Temperature = 0
+		params.Tint = 0
+		settings.CameraProfile = "Embedded"
+	}
+
 	settings.Exposure2012 = params.Exposure2012
 	settings.Contrast2012 = params.Contrast2012
 	settings.Highlights2012 = params.Highlights2012
@@ -132,6 +146,14 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 
 	if err := os.WriteFile(xmpPath, xmpData, 0644); err != nil {
 		return nil, fmt.Errorf("failed to write xmp file: %w", err)
+	}
+
+	// 6. For JPG/PNG, we MUST embed the XMP into the file for Lightroom to see it.
+	// LR generally ignores sidecars for non-RAW files.
+	if checkExt == ".jpg" || checkExt == ".jpeg" || checkExt == ".png" {
+		if err := p.extractor.EmbedXMP(ctx, rawPath, xmpPath); err != nil {
+			return nil, fmt.Errorf("failed to embed xmp metadata: %w", err)
+		}
 	}
 
 	return result, nil

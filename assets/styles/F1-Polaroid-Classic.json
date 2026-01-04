@@ -3,10 +3,10 @@
   "name": "Polaroid Classic",
   "background_type": "color",
   "background_color": "#FFFBF0",
-  "padding_ratio": 0.06,
-  "bottom_bar_ratio": 0.20,
+  "padding_ratio": 0.05,
+  "bottom_bar_ratio": 0.18,
   "elements": [
     { "type": "image", "anchor": "center" },
-    { "type": "text", "content": "{{.Date}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.02, "color": "#444444", "anchor": "bottom-left", "margin_y": 0.10, "margin_x": 0.08 }
+    { "type": "text", "content": "{{.Date}}", "font_file": "MapleMono-NF-CN-Regular.ttf", "font_size": 0.016, "color": "#222222", "anchor": "bottom-center", "margin_y": 0.08, "margin_x": 0.0 }
   ]
 }
