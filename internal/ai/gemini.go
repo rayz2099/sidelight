@@ -169,7 +169,7 @@ var styles = map[string]string{
 	"product":          "Clean, commercial look. Neutral white balance (pure whites). Sharp, well-lit, accurate colors.",
 }
 
-func (g *GeminiClient) AnalyzeImage(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.GradingParams, error) {
+func (g *GeminiClient) AnalyzeImageLR(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.GradingParams, error) {
 	styleInstruction := styles["natural"] // Default
 	if instruction, ok := styles[opts.Style]; ok {
 		styleInstruction = instruction

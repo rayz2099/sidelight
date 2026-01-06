@@ -49,28 +49,30 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	}
 	result.Metadata = *metadata
 
-	// 2. Analyze with AI
-	params, err := p.aiClient.AnalyzeImage(ctx, previewData, *metadata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("ai analysis failed: %w", err)
+	// 2. Generate sidecars based on requested formats independently
+	// Deduplicate formats to avoid redundant processing
+	uniqueFormats := make(map[string]bool)
+	for _, f := range p.Formats {
+		uniqueFormats[strings.ToLower(f)] = true
 	}
-	result.Params = *params
 
-	// 3. Generate sidecars based on requested formats
-	for _, format := range p.Formats {
-		switch strings.ToLower(format) {
-		case "xmp":
-			if err := p.generateXMP(ctx, rawPath, params, result); err != nil {
-				return nil, err
-			}
-		case "pp3", "rt":
-			// For PP3, try to use native PP3 params for better quality
-			if err := p.generatePP3Native(ctx, rawPath, previewData, metadata, opts, result); err != nil {
-				// Fallback to conversion from Adobe params
-				if err := p.generatePP3(rawPath, params, result); err != nil {
-					return nil, err
-				}
-			}
+	// Handle XMP (Adobe)
+	if uniqueFormats["xmp"] {
+		params, err := p.aiClient.AnalyzeImageLR(ctx, previewData, *metadata, opts)
+		if err != nil {
+			return nil, fmt.Errorf("ai analysis (LR) failed: %w", err)
+		}
+		result.Params = *params
+
+		if err := p.generateXMP(ctx, rawPath, params, result); err != nil {
+			return nil, err
+		}
+	}
+
+	// Handle PP3 (RawTherapee)
+	if uniqueFormats["pp3"] || uniqueFormats["rt"] {
+		if err := p.generatePP3Native(ctx, rawPath, previewData, metadata, opts, result); err != nil {
+			return nil, err
 		}
 	}
 
