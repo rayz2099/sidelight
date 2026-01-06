@@ -33,7 +33,7 @@ var gradeCmd = &cobra.Command{
 
 func init() {
 	// Flags specific to the 'grade' command
-	gradeCmd.Flags().StringVar(&apiKey, "api-key", "", "Gemini API Key (or set GEMINI_API_KEY env var)")
+	gradeCmd.Flags().StringVar(&apiKey, "api-key", "", "Gemini API Key (or set SL_GEMINI_API_KEY env var)")
 	gradeCmd.Flags().String("endpoint", "", "Gemini Endpoint URL")
 	gradeCmd.Flags().String("model", "", "Gemini Model Name")
 	gradeCmd.Flags().IntVarP(&concurrency, "concurrency", "j", 4, "Number of concurrent files to process")
@@ -43,9 +43,9 @@ func init() {
 
 	// Env vars - 设置环境变量作为最低优先级的默认值
 	viper.SetEnvPrefix("GEMINI")
-	viper.BindEnv("gemini_api_key", "GEMINI_API_KEY")
-	viper.BindEnv("gemini_endpoint_url", "GEMINI_ENDPOINT_URL")
-	viper.BindEnv("gemini_model_name", "GEMINI_MODEL_NAME")
+	viper.BindEnv("gemini_api_key", "SL_GEMINI_API_KEY")
+	viper.BindEnv("gemini_endpoint_url", "SL_GEMINI_ENDPOINT_URL")
+	viper.BindEnv("gemini_model_name", "SL_GEMINI_MODEL_NAME")
 }
 
 // GradeParams 包含执行 grade 操作所需的所有参数
@@ -140,7 +140,7 @@ func runGrade(cmd *cobra.Command, args []string) {
 	}
 
 	if key == "" {
-		log.Fatal("API Key is required.")
+		log.Fatal("API Key is required. Provide it via config file (highest priority), --api-key flag, or SL_GEMINI_API_KEY environment variable.")
 	}
 
 	ctx := context.Background()
