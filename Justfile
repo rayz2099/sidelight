@@ -12,3 +12,6 @@ test:
 
 preview-styles file="images/output/output-1.jpg": build
 	@./bin/preview_all_styles.sh {{file}}
+
+preview-rt file style="film" prompt="": build
+	@./bin/preview_rt.sh "{{file}}" "{{style}}" "{{prompt}}"

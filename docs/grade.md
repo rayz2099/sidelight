@@ -1,13 +1,28 @@
 # 🎨 AI 智能调色风格 (Grade Styles)
 
-SideLight 内置了多种由 Gemini AI 驱动的专业调色风格。
-使用 `-s` 或 `--style` 参数来指定。
+SideLight 内置了多种由 Gemini AI 驱动的专业调色风格，并支持 **Adobe Lightroom (XMP)** 和 **RawTherapee (PP3)** 双平台。
+
+使用 `-s` 或 `--style` 参数来指定风格，使用 `-f` 或 `--format` 指定输出格式。
 
 **使用示例:**
 
 ```bash
-sidelight grade -s <风格名称> photo.jpg
+# 生成 Lightroom XMP
+sidelight grade -s film photo.jpg
+
+# 生成 RawTherapee PP3 (原生 AI 调色)
+sidelight grade -f pp3 -s fuji photo.ARW
 ```
+
+---
+
+## 🔹 平台支持 (Platform Support)
+
+| 格式 | 平台 | 说明 |
+|:---|:---|:---|
+| **`xmp`** | Adobe Lightroom / Camera Raw | 行业标准。对于 JPG/PNG，元数据将被直接嵌入文件。 |
+| **`pp3`** | RawTherapee | 针对开源平台优化。使用原生 PP3 参数生成，画质更佳，颗粒感更低。 |
+| **`all`** | 两者均生成 | 同时生成 .xmp 和 .pp3 文件。 |
 
 ---
 

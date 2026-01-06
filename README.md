@@ -38,7 +38,9 @@ SideLight 能精准还原场景光影，赋予照片电影质感。
 
 不再依赖固定预设。SideLight 会像专业调色师一样"看懂"你的照片——识别光影、情绪、场景和主体——并据此生成独一无二的调色参数。
 
-* **非破坏性工作流**：仅生成 Adobe 兼容的 `.xmp` 副档文件，**绝不修改**原始 RAW 文件。
+* **多平台支持**：同时支持 Adobe Lightroom (**XMP**) 和 RawTherapee (**PP3**) 工作流。
+* **原生 AI 调色**：针对 RawTherapee 提供原生参数生成（Native PP3），避免转换损失，画质更通透。
+* **非破坏性工作流**：仅生成副档文件，**绝不修改**原始 RAW 文件。
 * **全格式支持**：完美支持 Sony ARW, Canon CR3, Nikon NEF 等 RAW 格式，以及 JPG/PNG 标准图片（自动嵌入元数据）。
 * **自然语言控制**：支持使用自然语言（如"更温暖一点"、"像Wes Anderson电影"）微调 AI 的创作。
 
@@ -56,9 +58,9 @@ SideLight 能精准还原场景光影，赋予照片电影质感。
 
 ### 前置依赖
 
-SideLight 依赖 **ExifTool** 进行元数据读写。请确保系统中已安装：
+SideLight 依赖 **ExifTool** 进行元数据读写。如果您需要预览或使用 RawTherapee 工作流，建议安装 **RawTherapee**。
 
-* **macOS**: `brew install exiftool`
+* **macOS**: `brew install exiftool && brew install --cask rawtherapee`
 * **Linux**: `sudo apt-get install libimage-exiftool-perl`
 * **Windows**: 下载 `exiftool.exe` 并添加至系统 PATH。
 
@@ -95,7 +97,7 @@ echo '{"gemini_api_key": "your_api_key_here"}' > ~/.config/sidelight/config.json
 
 ### 🎨 AI 调色 (Grade)
 
-分析图片并生成 Lightroom/Camera Raw 可读的 XMP 调色数据。
+分析图片并生成 Lightroom (XMP) 或 RawTherapee (PP3) 可读的调色数据。
 
 **基本用法**:
 
@@ -106,26 +108,27 @@ sidelight grade [文件或目录...] [flags]
 **常用选项**:
 
 * `-s, --style <name>`: 指定调色风格 (默认 "natural")。
+* `-f, --format <xmp|pp3|all>`: 指定输出格式 (默认 "xmp")。
 * `-p, --prompt <text>`: 给 AI 的额外自然语言指令。
 * `-j, --concurrency <int>`: 并发处理数量 (默认 4)。
 
 **示例**:
 
 ```bash
-# 1. 基础调色 (自然风格)
+# 1. 基础调色 (生成 Lightroom XMP)
 sidelight grade photo.ARW
 
-# 2. 指定风格 (例如: 胶片感)
-sidelight grade photo.ARW --style film
+# 2. 生成 RawTherapee PP3
+sidelight grade photo.ARW --format pp3 --style film
 
-# 3. 自定义指令 (例如: 想要赛博朋克感的夜晚)
+# 3. 同时生成 XMP 和 PP3
+sidelight grade photo.ARW --format all
+
+# 4. 自定义指令
 sidelight grade night_street.jpg --style cyberpunk --prompt "强调霓虹灯的反射，增加对比度"
-
-# 4. 批量处理整个目录
-sidelight grade ./vacation_photos/ --style kodak
 ```
 
-> **注意 (JPG/PNG 用户)**: 对于非 RAW 格式，SideLight 会自动将 XMP 元数据**嵌入**到图片文件中，以确保 Lightroom 能正确读取。请留意文件修改时间。
+> **注意 (JPG/PNG 用户)**: 对于非 RAW 格式且使用 XMP 格式时，SideLight 会自动将元数据**嵌入**到图片文件中。RawTherapee (PP3) 模式则始终生成侧边文件。
 
 👉 **[查看完整调色风格列表 (Grade Styles)](docs/grade.md)**
 

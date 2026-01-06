@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"sidelight/pkg/models"
@@ -17,23 +18,42 @@ type GeminiClient struct {
 	model  *genai.GenerativeModel
 }
 
+// bearerTokenTransport adds Bearer token authentication for proxy endpoints
+type bearerTokenTransport struct {
+	apiKey    string
+	transport http.RoundTripper
+}
+
+func (t *bearerTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	newReq := req.Clone(req.Context())
+	newReq.Header.Set("Authorization", "Bearer "+t.apiKey)
+	return t.transport.RoundTrip(newReq)
+}
+
 func NewGeminiClient(ctx context.Context, apiKey, endpoint string, modelName string) (*GeminiClient, error) {
 	opts := []option.ClientOption{option.WithAPIKey(apiKey)}
+	// If using a custom endpoint (proxy), add Bearer token auth
 	//fmt.Println("apikey:", apiKey)
 	if endpoint != "" {
 		opts = append(opts, option.WithEndpoint(endpoint))
+		opts = append(opts, option.WithHTTPClient(&http.Client{
+			Transport: &bearerTokenTransport{
+				apiKey:    apiKey,
+				transport: http.DefaultTransport,
+			},
+		}))
 	}
+
 	if len(modelName) == 0 {
 		modelName = "gemini-2.5-flash"
 	}
+
 	client, err := genai.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gemini client: %w", err)
 	}
 
 	model := client.GenerativeModel(modelName)
-	// 注意：不设置 ResponseMIMEType，因为某些代理可能不支持
-	// 改为在 prompt 中明确要求 JSON 格式
 	return &GeminiClient{
 		client: client,
 		model:  model,
@@ -149,7 +169,7 @@ var styles = map[string]string{
 	"product":          "Clean, commercial look. Neutral white balance (pure whites). Sharp, well-lit, accurate colors.",
 }
 
-func (g *GeminiClient) AnalyzeImage(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.GradingParams, error) {
+func (g *GeminiClient) AnalyzeImageLR(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.GradingParams, error) {
 	styleInstruction := styles["natural"] // Default
 	if instruction, ok := styles[opts.Style]; ok {
 		styleInstruction = instruction
@@ -201,6 +221,167 @@ Output ONLY the JSON object.`, systemInstruction, metadataInfo, styleInstruction
 	cleanJSON = strings.TrimSpace(cleanJSON)
 
 	var params models.GradingParams
+	if err := json.Unmarshal([]byte(cleanJSON), &params); err != nil {
+		return nil, fmt.Errorf("failed to parse AI response: %w (raw: %s)", err, cleanJSON)
+	}
+
+	return &params, nil
+}
+
+// pp3Styles contains RawTherapee-specific style instructions with RT parameter guidance
+var pp3Styles = map[string]string{
+	"natural": `Natural look: accurate colors, balanced exposure.
+compensation=0.45, contrast=10, lab_contrast=15, lab_chromaticity=15, nr_luminance=10, nr_chrominance=15`,
+
+	"vivid": `Vibrant colors, punchy contrast.
+compensation=0.48, contrast=15, lab_contrast=20, lab_chromaticity=25, vib_pastels=20, nr_luminance=10`,
+
+	"film": `Film look: warm tones, lifted blacks, soft roll-off.
+compensation=0.50, contrast=12, lab_chromaticity=20, temperature=5800, tint=1.02, nr_luminance=5`,
+
+	"kodak": `Kodak Portra style: warm, creamy skin tones, slight overexposure look.
+compensation=0.52, contrast=10, lab_chromaticity=18, temperature=5600, tint=0.98, vib_pastels=15`,
+
+	"fuji": `Fujifilm style: cool shadows, high contrast, punchy greens.
+compensation=0.45, contrast=18, lab_contrast=22, lab_chromaticity=20, temperature=5200, tint=0.96`,
+
+	"cinematic": `Movie look: teal/orange vibe, controlled contrast, moody.
+compensation=0.42, contrast=15, lab_contrast=18, lab_chromaticity=15, vib_pastels=10`,
+
+	"landscape": `Landscape: clear sky, enhanced foliage, detailed.
+compensation=0.40, contrast=15, lab_contrast=20, lab_chromaticity=25, vib_pastels=20, nr_luminance=10`,
+
+	"portrait": `Portrait: flattering skin tones, soft contrast, reduced texture.
+compensation=0.48, contrast=8, lab_contrast=10, lab_chromaticity=15, vib_pastels=10, nr_luminance=20, nr_chrominance=20`,
+
+	"bw": `Black and white: strong contrast, rich tonal range.
+compensation=0.45, contrast=20, saturation=-100, lab_contrast=25, nr_luminance=15`,
+
+	"matte": `Matte/faded look: lifted blacks, low contrast, desaturated.
+compensation=0.52, contrast=5, lab_contrast=10, lab_chromaticity=10, black=0`,
+}
+
+const pp3SystemInstruction = `You are a RawTherapee color grading expert. Generate high-quality PP3 parameters.
+
+⚠️ CRITICAL QUALITY RULES:
+- **Noise Reduction**: ALWAYS apply 'nr_luminance' (10-25) and 'nr_chrominance' (15-30) unless ISO is very low. Grainy images look bad.
+- **Exposure**: 'compensation' MUST be 0.35-0.55. RT renders dark by default.
+- **Saturation**: Be conservative. Use 'vib_pastels' for natural color boosts instead of 'saturation'.
+- **Contrast**: Avoid high 'contrast' (>20) or 'lab_contrast' (>30) to prevent harsh artifacts.
+
+📊 ALLOWED PARAMETERS:
+- compensation: 0.35-0.55 (brightness, REQUIRED)
+- contrast: 5-25 (global contrast)
+- saturation: -100 to 20 (color saturation, -100 for B&W)
+- black: 0-150 (black point, higher = darker blacks)
+- highlight_compr: 0-100 (recover highlights)
+- temperature: 4000-7500 (white balance)
+- tint: 0.90-1.10 (green-magenta balance)
+- lab_brightness: -10 to 10 (luminance adjust)
+- lab_contrast: 0-30 (local contrast/clarity)
+- lab_chromaticity: 0-30 (color vibrancy)
+- vib_pastels: 0-30 (boost muted colors)
+- vib_saturated: 0-15 (protect saturated colors)
+- nr_luminance: 5-40 (reduce grain/noise)
+- nr_chrominance: 10-40 (remove color noise)
+
+Output ONLY this JSON format:
+{
+  "compensation": 0.45,
+  "contrast": 12,
+  "saturation": 5,
+  "black": 50,
+  "highlight_compr": 40,
+  "temperature": 5500,
+  "tint": 1.0,
+  "lab_brightness": 5,
+  "lab_contrast": 15,
+  "lab_chromaticity": 20,
+  "vib_pastels": 15,
+  "vib_saturated": 5,
+  "nr_luminance": 15,
+  "nr_chrominance": 20
+}`
+
+func (g *GeminiClient) AnalyzeImageForPP3(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.PP3Params, error) {
+	// Use RT-specific styles instead of generic Adobe styles
+	styleInstruction := pp3Styles["natural"]
+	if instruction, ok := pp3Styles[opts.Style]; ok {
+		styleInstruction = instruction
+	}
+
+	metadataInfo := fmt.Sprintf(`Image Metadata:
+- Camera: %s %s
+- Lens: %s
+- ISO: %d
+- Aperture: %s
+- Shutter Speed: %s
+- Date: %s`, metadata.Make, metadata.Model, metadata.Lens, metadata.ISO, metadata.Aperture, metadata.ShutterSpeed, metadata.DateTime)
+
+	// Build user instruction section
+	userInstructions := ""
+	if opts.UserPrompt != "" {
+		userInstructions = fmt.Sprintf("\n\n🎯 USER SPECIFIC INSTRUCTIONS (prioritize these):\n%s", opts.UserPrompt)
+	}
+
+	fullPrompt := fmt.Sprintf(`%s
+
+%s
+    
+📷 Style Goal: %s
+%s
+
+Analyze the image and generate RT parameters. Output ONLY JSON.`,
+		pp3SystemInstruction, metadataInfo, styleInstruction, userInstructions)
+
+	prompt := []genai.Part{
+		genai.ImageData("jpeg", imageData),
+		genai.Text(fullPrompt),
+	}
+
+	resp, err := g.model.GenerateContent(ctx, prompt...)
+	if err != nil {
+		return nil, fmt.Errorf("gemini generation failed: %w", err)
+	}
+
+	if resp == nil {
+		return nil, fmt.Errorf("gemini returned nil response")
+	}
+
+	// Check for prompt feedback (safety blocks, etc.)
+	if resp.PromptFeedback != nil {
+		if resp.PromptFeedback.BlockReason != 0 {
+			return nil, fmt.Errorf("prompt blocked by gemini: reason=%v", resp.PromptFeedback.BlockReason)
+		}
+	}
+
+	if len(resp.Candidates) == 0 {
+		// Try to get more info
+		return nil, fmt.Errorf("no candidates returned from gemini (promptFeedback=%+v)", resp.PromptFeedback)
+	}
+
+	// Check if candidate was blocked
+	if resp.Candidates[0].FinishReason != 0 && resp.Candidates[0].FinishReason != 1 {
+		// 1 = Stop (normal), other values indicate issues
+		return nil, fmt.Errorf("candidate finished with reason: %v", resp.Candidates[0].FinishReason)
+	}
+
+	if resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("candidate has no content parts")
+	}
+
+	part := resp.Candidates[0].Content.Parts[0]
+	text, ok := part.(genai.Text)
+	if !ok {
+		return nil, fmt.Errorf("unexpected response part type: %T", part)
+	}
+
+	cleanJSON := strings.TrimSpace(string(text))
+	cleanJSON = strings.TrimPrefix(cleanJSON, "```json")
+	cleanJSON = strings.TrimSuffix(cleanJSON, "```")
+	cleanJSON = strings.TrimSpace(cleanJSON)
+
+	var params models.PP3Params
 	if err := json.Unmarshal([]byte(cleanJSON), &params); err != nil {
 		return nil, fmt.Errorf("failed to parse AI response: %w (raw: %s)", err, cleanJSON)
 	}
