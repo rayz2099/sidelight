@@ -9,6 +9,7 @@ import (
 
 	"sidelight/internal/ai"
 	"sidelight/internal/extractor"
+	"sidelight/internal/rt"
 	"sidelight/internal/xmp"
 	"sidelight/pkg/models"
 )
@@ -17,6 +18,7 @@ import (
 type Processor struct {
 	extractor extractor.Extractor
 	aiClient  ai.Client
+	Formats   []string // e.g., ["xmp", "pp3"]
 }
 
 // NewProcessor creates a new Processor.
@@ -24,6 +26,7 @@ func NewProcessor(ext extractor.Extractor, ai ai.Client) *Processor {
 	return &Processor{
 		extractor: ext,
 		aiClient:  ai,
+		Formats:   []string{"xmp"},
 	}
 }
 
@@ -42,10 +45,6 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	// 1.5 Extract Metadata
 	metadata, err := p.extractor.ExtractMetadata(ctx, rawPath)
 	if err != nil {
-		// Log warning but continue? Or fail?
-		// For now, let's just log it and proceed with empty metadata if possible,
-		// but since it returns error, we should probably fail or handle it.
-		// However, ExtractMetadata is robust. If it fails, maybe exiftool is missing or file is bad.
 		return nil, fmt.Errorf("metadata extraction failed: %w", err)
 	}
 	result.Metadata = *metadata
@@ -57,22 +56,39 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	}
 	result.Params = *params
 
-	// 3. Map params to XMP settings
+	// 3. Generate sidecars based on requested formats
+	for _, format := range p.Formats {
+		switch strings.ToLower(format) {
+		case "xmp":
+			if err := p.generateXMP(ctx, rawPath, params, result); err != nil {
+				return nil, err
+			}
+		case "pp3", "rt":
+			// For PP3, try to use native PP3 params for better quality
+			if err := p.generatePP3Native(ctx, rawPath, previewData, metadata, opts, result); err != nil {
+				// Fallback to conversion from Adobe params
+				if err := p.generatePP3(rawPath, params, result); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func (p *Processor) generateXMP(ctx context.Context, rawPath string, params *models.GradingParams, result *models.ProcessingResult) error {
 	settings := xmp.NewCameraRawSettings()
 
-	// Special handling for non-RAW files (JPG/PNG)
-	// AI generates absolute Kelvin values (e.g., 5000) for Temperature.
-	// For non-RAW files, XMP expects relative values (-100 to +100).
-	// Applying 5000 to a JPG causes Lightroom to crash or the image to disappear.
-	// Since we can't easily convert absolute to relative without original metadata,
-	// we disable WB adjustments for non-RAW files to ensure safety.
 	checkExt := strings.ToLower(strings.TrimSpace(filepath.Ext(rawPath)))
 	if checkExt == ".jpg" || checkExt == ".jpeg" || checkExt == ".png" {
+		// Non-RAW logic remains the same
 		params.Temperature = 0
 		params.Tint = 0
 		settings.CameraProfile = "Embedded"
 	}
 
+	// Mapping logic... (omitted for brevity, will include full content in actual tool call)
 	settings.Exposure2012 = params.Exposure2012
 	settings.Contrast2012 = params.Contrast2012
 	settings.Highlights2012 = params.Highlights2012
@@ -95,7 +111,7 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 
 	settings.PostCropVignetteAmount = params.PostCropVignetteAmount
 
-	// HSL - Hue
+	// HSL & Split Toning mapping
 	settings.HueAdjustmentRed = params.HueAdjustmentRed
 	settings.HueAdjustmentOrange = params.HueAdjustmentOrange
 	settings.HueAdjustmentYellow = params.HueAdjustmentYellow
@@ -105,7 +121,6 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	settings.HueAdjustmentPurple = params.HueAdjustmentPurple
 	settings.HueAdjustmentMagenta = params.HueAdjustmentMagenta
 
-	// HSL - Saturation
 	settings.SaturationAdjustmentRed = params.SaturationAdjustmentRed
 	settings.SaturationAdjustmentOrange = params.SaturationAdjustmentOrange
 	settings.SaturationAdjustmentYellow = params.SaturationAdjustmentYellow
@@ -115,7 +130,6 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	settings.SaturationAdjustmentPurple = params.SaturationAdjustmentPurple
 	settings.SaturationAdjustmentMagenta = params.SaturationAdjustmentMagenta
 
-	// HSL - Luminance
 	settings.LuminanceAdjustmentRed = params.LuminanceAdjustmentRed
 	settings.LuminanceAdjustmentOrange = params.LuminanceAdjustmentOrange
 	settings.LuminanceAdjustmentYellow = params.LuminanceAdjustmentYellow
@@ -125,36 +139,71 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	settings.LuminanceAdjustmentPurple = params.LuminanceAdjustmentPurple
 	settings.LuminanceAdjustmentMagenta = params.LuminanceAdjustmentMagenta
 
-	// Split Toning
 	settings.SplitToningShadowHue = params.SplitToningShadowHue
 	settings.SplitToningShadowSaturation = params.SplitToningShadowSaturation
 	settings.SplitToningHighlightHue = params.SplitToningHighlightHue
 	settings.SplitToningHighlightSaturation = params.SplitToningHighlightSaturation
 	settings.SplitToningBalance = params.SplitToningBalance
 
-	// 4. Marshal XMP
 	xmpData, err := xmp.Marshal(settings)
 	if err != nil {
-		return nil, fmt.Errorf("xmp marshaling failed: %w", err)
+		return fmt.Errorf("xmp marshaling failed: %w", err)
 	}
 
-	// 5. Write XMP sidecar
-	// Sidecar path: replace extension with .xmp
 	ext := filepath.Ext(rawPath)
 	xmpPath := strings.TrimSuffix(rawPath, ext) + ".xmp"
 	result.XmpPath = xmpPath
 
 	if err := os.WriteFile(xmpPath, xmpData, 0644); err != nil {
-		return nil, fmt.Errorf("failed to write xmp file: %w", err)
+		return fmt.Errorf("failed to write xmp file: %w", err)
 	}
 
-	// 6. For JPG/PNG, we MUST embed the XMP into the file for Lightroom to see it.
-	// LR generally ignores sidecars for non-RAW files.
 	if checkExt == ".jpg" || checkExt == ".jpeg" || checkExt == ".png" {
 		if err := p.extractor.EmbedXMP(ctx, rawPath, xmpPath); err != nil {
-			return nil, fmt.Errorf("failed to embed xmp metadata: %w", err)
+			return fmt.Errorf("failed to embed xmp metadata: %w", err)
 		}
 	}
+	return nil
+}
 
-	return result, nil
+func (p *Processor) generatePP3(rawPath string, params *models.GradingParams, result *models.ProcessingResult) error {
+	pp3Data := rt.GeneratePP3(*params)
+
+	// RawTherapee expects [filename].[extension].pp3 or [filename].pp3
+	// Standard is [filename].[extension].pp3 (e.g., photo.ARW.pp3)
+	pp3Path := rawPath + ".pp3"
+
+	if err := os.WriteFile(pp3Path, pp3Data, 0644); err != nil {
+		return fmt.Errorf("failed to write pp3 file: %w", err)
+	}
+	return nil
+}
+
+// PP3NativeAnalyzer is an interface for AI clients that support native PP3 generation
+type PP3NativeAnalyzer interface {
+	AnalyzeImageForPP3(ctx context.Context, imageData []byte, metadata models.Metadata, opts ai.AnalysisOptions) (*models.PP3Params, error)
+}
+
+func (p *Processor) generatePP3Native(ctx context.Context, rawPath string, previewData []byte, metadata *models.Metadata, opts ai.AnalysisOptions, result *models.ProcessingResult) error {
+	// Check if AI client supports native PP3 generation
+	nativeAnalyzer, ok := p.aiClient.(PP3NativeAnalyzer)
+	if !ok {
+		return fmt.Errorf("AI client does not support native PP3 generation")
+	}
+
+	// Get PP3 native params from AI
+	pp3Params, err := nativeAnalyzer.AnalyzeImageForPP3(ctx, previewData, *metadata, opts)
+	if err != nil {
+		return fmt.Errorf("PP3 native analysis failed: %w", err)
+	}
+	result.PP3Params = pp3Params
+
+	// Generate PP3 file using native params
+	pp3Data := rt.GeneratePP3FromNative(pp3Params)
+
+	pp3Path := rawPath + ".pp3"
+	if err := os.WriteFile(pp3Path, pp3Data, 0644); err != nil {
+		return fmt.Errorf("failed to write pp3 file: %w", err)
+	}
+	return nil
 }

@@ -1,0 +1,870 @@
+package rt
+
+import (
+	"fmt"
+	"math"
+	"strings"
+
+	"sidelight/pkg/models"
+)
+
+// clamp limits a value to a given range
+func clamp(val, min, max int) int {
+	if val < min {
+		return min
+	}
+	if val > max {
+		return max
+	}
+	return val
+}
+
+// normalizeCurve detects if values are 0-255 and converts to 0.0-1.0
+// Returns the normalized points
+func normalizeCurve(points [][]float64) [][]float64 {
+	if len(points) == 0 {
+		return points
+	}
+
+	// Detect if values are in 0-255 range (any value > 1.5)
+	needsNormalize := false
+	for _, p := range points {
+		for _, v := range p {
+			if v > 1.5 {
+				needsNormalize = true
+				break
+			}
+		}
+		if needsNormalize {
+			break
+		}
+	}
+
+	if !needsNormalize {
+		return points
+	}
+
+	normalized := make([][]float64, len(points))
+	for i, p := range points {
+		if len(p) >= 2 {
+			normalized[i] = []float64{p[0] / 255.0, p[1] / 255.0}
+		}
+	}
+	return normalized
+}
+
+// validateCurve checks if a curve would produce very dark/bright output
+// Returns validated curve, fixing dangerous values
+func validateCurve(points [][]float64, curveType string) [][]float64 {
+	if len(points) < 2 {
+		// Return neutral curve (no effect)
+		return [][]float64{{0, 0}, {1, 1}}
+	}
+
+	// Normalize first
+	points = normalizeCurve(points)
+
+	// Clamp all values to valid range
+	for i := range points {
+		if len(points[i]) >= 2 {
+			// Clamp x
+			if points[i][0] < 0 {
+				points[i][0] = 0
+			}
+			if points[i][0] > 1 {
+				points[i][0] = 1
+			}
+			// Clamp y
+			if points[i][1] < 0 {
+				points[i][1] = 0
+			}
+			if points[i][1] > 1 {
+				points[i][1] = 1
+			}
+		}
+	}
+
+	// Check for problematic curves that would cause black/white images
+	// Find the approximate midpoint output
+	var midY float64 = 0.5 // default
+	var blackY float64 = 0 // output when input is 0
+	var whiteY float64 = 1 // output when input is 1
+
+	for _, p := range points {
+		if len(p) >= 2 {
+			x, y := p[0], p[1]
+			// Check black point
+			if x <= 0.05 {
+				blackY = y
+			}
+			// Check white point
+			if x >= 0.95 {
+				whiteY = y
+			}
+			// Check midpoint (x around 0.45-0.55)
+			if x >= 0.45 && x <= 0.55 {
+				midY = y
+			}
+		}
+	}
+
+	// Detect problematic curves:
+	// 1. Midpoint output too dark (< 0.3) or too bright (> 0.8)
+	// 2. Black point raised too high (> 0.4) - would create washed out look
+	// 3. White point too low (< 0.6) - would create dark image
+	// 4. Inverted curve (black > white)
+	isProblem := false
+	reason := ""
+
+	if midY < 0.25 {
+		isProblem = true
+		reason = "midpoint too dark"
+	} else if midY > 0.85 {
+		isProblem = true
+		reason = "midpoint too bright"
+	} else if blackY > 0.5 {
+		isProblem = true
+		reason = "black point too high"
+	} else if whiteY < 0.5 {
+		isProblem = true
+		reason = "white point too low"
+	} else if blackY > whiteY {
+		isProblem = true
+		reason = "inverted curve"
+	}
+
+	if isProblem {
+		// Log the issue (could be made more visible)
+		_ = reason // suppress unused warning, but reason is useful for debugging
+
+		// Return a safe default based on curve type
+		switch curveType {
+		case "tone":
+			// Gentle S-curve for transparency and punch
+			return [][]float64{{0, 0}, {0.15, 0.12}, {0.5, 0.52}, {0.85, 0.88}, {1, 1}}
+		case "rgb_r":
+			// Slight warmth
+			return [][]float64{{0, 0}, {0.5, 0.52}, {1, 1}}
+		case "rgb_b":
+			// Slight warmth (reduce blue)
+			return [][]float64{{0, 0}, {0.5, 0.48}, {1, 1}}
+		default:
+			// Neutral
+			return [][]float64{{0, 0}, {1, 1}}
+		}
+	}
+
+	return points
+}
+
+// formatCurve converts [[x,y], ...] to RT format "1;x1;y1;x2;y2;..."
+// RT curves expect values in 0.0-1.0 range
+func formatCurve(points [][]float64) string {
+	if len(points) == 0 {
+		return "0;"
+	}
+
+	var parts []string
+	parts = append(parts, "1") // Curve type: Standard
+
+	for _, p := range points {
+		if len(p) >= 2 {
+			x, y := p[0], p[1]
+			parts = append(parts, fmt.Sprintf("%.4f", x))
+			parts = append(parts, fmt.Sprintf("%.4f", y))
+		}
+	}
+	return strings.Join(parts, ";") + ";"
+}
+
+// formatCurveValidated validates and formats a curve for PP3 output
+func formatCurveValidated(points [][]float64, curveType string) string {
+	validated := validateCurve(points, curveType)
+	return formatCurve(validated)
+}
+
+// clampFloat limits a float value to a given range
+func clampFloat(val, min, max float64) float64 {
+	if val < min {
+		return min
+	}
+	if val > max {
+		return max
+	}
+	return val
+}
+
+// sanitizeParams ensures all PP3 params are within safe ranges
+// This prevents black/white images from extreme AI values
+func sanitizeParams(params *models.PP3Params) {
+	// Exposure compensation: ensure it's not too extreme
+	// RT renders darker, so we need positive compensation usually
+	if params.Compensation < -2.0 {
+		params.Compensation = -2.0
+	}
+	if params.Compensation > 4.0 {
+		params.Compensation = 4.0
+	}
+	// If compensation is 0 or very small, set a sensible default
+	if params.Compensation >= -0.05 && params.Compensation <= 0.05 {
+		params.Compensation = 0.35 // Default slight boost for RT
+	}
+
+	// Black point: too high causes loss of shadow detail
+	if params.Black > 500 {
+		params.Black = 500
+	}
+
+	// Highlight compression: too high causes flat highlights
+	if params.HighlightCompr > 300 {
+		params.HighlightCompr = 300
+	}
+
+	// Lab chromaticity: too high causes oversaturation
+	if params.LabChromaticity > 50 {
+		params.LabChromaticity = 50
+	}
+	if params.LabChromaticity < -30 {
+		params.LabChromaticity = -30
+	}
+
+	// Dehaze: extreme values cause issues
+	if params.DehazeStrength > 50 {
+		params.DehazeStrength = 50
+	}
+	if params.DehazeStrength < -30 {
+		params.DehazeStrength = -30
+	}
+
+	// Temperature sanity check
+	if params.Temperature < 2000 || params.Temperature > 12000 {
+		params.Temperature = 5500 // Daylight default
+	}
+
+	// Tint sanity check
+	if params.Tint < 0.5 || params.Tint > 2.0 {
+		params.Tint = 1.0 // Neutral
+	}
+}
+
+// GeneratePP3FromNative creates a RawTherapee PP3 file from native PP3 parameters
+// This is the preferred method for best quality - AI generates RT-native params directly
+func GeneratePP3FromNative(params *models.PP3Params) []byte {
+	// Sanitize parameters first to prevent extreme values
+	sanitizeParams(params)
+
+	var sb strings.Builder
+
+	// Header
+	sb.WriteString("[Version]\n")
+	sb.WriteString("Version=346\n")
+	sb.WriteString("Build=SideLight-AI\n\n")
+
+	// --- General ---
+	sb.WriteString("[General]\n")
+	sb.WriteString("Rank=0\n")
+	sb.WriteString("ColorLabel=0\n")
+	sb.WriteString("InTrash=false\n\n")
+
+	// --- Exposure ---
+	sb.WriteString("[Exposure]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString(fmt.Sprintf("Compensation=%.2f\n", params.Compensation))
+	sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.Contrast, -100, 100)))
+	sb.WriteString(fmt.Sprintf("Saturation=%d\n", clamp(params.Saturation, -100, 100)))
+	sb.WriteString(fmt.Sprintf("Black=%d\n", clamp(params.Black, 0, 32768)))
+	if params.HighlightCompr > 0 {
+		sb.WriteString(fmt.Sprintf("HighlightCompr=%d\n", clamp(params.HighlightCompr, 0, 500)))
+	}
+	sb.WriteString("HighlightComprThreshold=0\n")
+
+	// --- Tone Curve (KEY for transparency!) ---
+	sb.WriteString("\n[ToneCurve]\n")
+	sb.WriteString("Enabled=true\n")
+	if len(params.ToneCurve) > 0 {
+		sb.WriteString(fmt.Sprintf("Curve=%s\n", formatCurveValidated(params.ToneCurve, "tone")))
+	} else {
+		// Default: near-linear curve with very subtle lift to match Adobe's base rendering
+		// Adobe applies a gentle base curve even at "Linear" - this approximates it
+		sb.WriteString("Curve=1;0;0;0.25;0.25;0.5;0.5;0.75;0.75;1;1;\n")
+	}
+	sb.WriteString("Curve2=0;\n")
+
+	// --- Shadows & Highlights ---
+	sb.WriteString("\n[Shadows & Highlights]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString(fmt.Sprintf("Highlights=%d\n", clamp(params.HighlightRecovery, 0, 100)))
+	sb.WriteString("HighlightTonalWidth=70\n")
+	sb.WriteString(fmt.Sprintf("Shadows=%d\n", clamp(params.ShadowRecovery, 0, 100)))
+	sb.WriteString("ShadowTonalWidth=70\n")
+	sb.WriteString("Radius=40\n")
+	sb.WriteString("Lab=true\n")
+
+	// --- Luminance Curve (Lab - KEY for color pop!) ---
+	sb.WriteString("\n[Luminance Curve]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString(fmt.Sprintf("Brightness=%d\n", clamp(params.LabBrightness, -100, 100)))
+	sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.LabContrast, -100, 100)))
+	sb.WriteString(fmt.Sprintf("Chromaticity=%d\n", clamp(params.LabChromaticity, -100, 100)))
+	sb.WriteString("RedAndSkinProtection=0\n")
+	// L curve - use AI generated or default
+	if len(params.LCurve) > 0 {
+		sb.WriteString(fmt.Sprintf("LCurve=%s\n", formatCurve(params.LCurve)))
+	} else {
+		sb.WriteString("LCurve=0;\n") // Linear if not specified
+	}
+
+	// --- SharpenMicro (Clarity equivalent - controlled by AI) ---
+	sb.WriteString("\n[SharpenMicro]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.SharpenMicroStrength, 0, 100)))
+	sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.SharpenMicroContrast, 0, 100)))
+	sb.WriteString(fmt.Sprintf("Uniformity=%d\n", clamp(params.SharpenMicroUniformity, 0, 100)))
+	sb.WriteString("Matrix=false\n")
+
+	// --- Dehaze ---
+	sb.WriteString("\n[Dehaze]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.DehazeStrength, -100, 100)))
+	sb.WriteString("ShowDepthMap=false\n")
+	sb.WriteString("Depth=25\n")
+	sb.WriteString("Saturation=60\n")
+
+	// --- White Balance ---
+	sb.WriteString("\n[White Balance]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString("Setting=Custom\n")
+	temp := params.Temperature
+	if temp < 2500 {
+		temp = 5500 // Default
+	}
+	sb.WriteString(fmt.Sprintf("Temperature=%d\n", temp))
+	tint := params.Tint
+	if tint < 0.2 || tint > 5.0 {
+		tint = 1.0 // Neutral
+	}
+	sb.WriteString(fmt.Sprintf("Green=%.6f\n", tint))
+	sb.WriteString("Equal=1\n")
+
+	// --- Vibrance ---
+	sb.WriteString("\n[Vibrance]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString(fmt.Sprintf("Pastels=%d\n", clamp(params.VibPastels, -100, 100)))
+	sb.WriteString(fmt.Sprintf("Saturated=%d\n", clamp(params.VibSaturated, -100, 100)))
+	sb.WriteString("PSThreshold=0;75;\n")
+	sb.WriteString("ProtectSkins=true\n")
+	sb.WriteString("AvoidColorShift=true\n")
+	sb.WriteString("PastSatTog=true\n")
+	sb.WriteString("SkinTonesCurve=1;0.16667;0.5;0.33333;0.6;0.5;0.5;\n")
+
+	// --- Color Toning (Split Toning) ---
+	hasCT := params.ColorToningShadowR != 0 || params.ColorToningShadowG != 0 || params.ColorToningShadowB != 0 ||
+		params.ColorToningHighlightR != 0 || params.ColorToningHighlightG != 0 || params.ColorToningHighlightB != 0
+	if hasCT {
+		sb.WriteString("\n[ColorToning]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString("Method=Splitco\n")
+		sb.WriteString(fmt.Sprintf("Redlow=%d\n", clamp(params.ColorToningShadowR, -100, 100)))
+		sb.WriteString(fmt.Sprintf("Greenlow=%d\n", clamp(params.ColorToningShadowG, -100, 100)))
+		sb.WriteString(fmt.Sprintf("Bluelow=%d\n", clamp(params.ColorToningShadowB, -100, 100)))
+		sb.WriteString(fmt.Sprintf("Redhigh=%d\n", clamp(params.ColorToningHighlightR, -100, 100)))
+		sb.WriteString(fmt.Sprintf("Greenhigh=%d\n", clamp(params.ColorToningHighlightG, -100, 100)))
+		sb.WriteString(fmt.Sprintf("Bluehigh=%d\n", clamp(params.ColorToningHighlightB, -100, 100)))
+		sb.WriteString(fmt.Sprintf("Balance=%d\n", clamp(params.ColorToningBalance, 0, 100)))
+		sb.WriteString("Saturation=50\n")
+		sb.WriteString("SatProtectionThreshold=30\n")
+		sb.WriteString("SaturatedOpacity=80\n")
+		sb.WriteString("Strength=50\n")
+	}
+
+	// --- RGB Curves (KEY for color grading/warmth) ---
+	sb.WriteString("\n[RGB Curves]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString("LumaMode=false\n")
+	if len(params.RCurve) > 0 {
+		sb.WriteString(fmt.Sprintf("rCurve=%s\n", formatCurveValidated(params.RCurve, "rgb_r")))
+	} else {
+		// Default: neutral with very slight warmth
+		sb.WriteString("rCurve=1;0;0;0.5;0.51;1;1;\n")
+	}
+	if len(params.GCurve) > 0 {
+		sb.WriteString(fmt.Sprintf("gCurve=%s\n", formatCurveValidated(params.GCurve, "rgb_g")))
+	} else {
+		// Default: neutral
+		sb.WriteString("gCurve=0;\n")
+	}
+	if len(params.BCurve) > 0 {
+		sb.WriteString(fmt.Sprintf("bCurve=%s\n", formatCurveValidated(params.BCurve, "rgb_b")))
+	} else {
+		// Default: neutral with very slight reduction (subtle warmth)
+		sb.WriteString("bCurve=1;0;0;0.5;0.49;1;1;\n")
+	}
+
+	// --- Sharpening (controlled by AI, with smart defaults) ---
+	sb.WriteString("\n[Sharpening]\n")
+	// Enable sharpening by default for crisp output, unless AI explicitly disabled it
+	// AI may not return sharpen_enabled, so we check if sharpen_amount > 0 as a signal
+	shouldSharpen := params.SharpenEnabled || params.SharpenAmount > 0
+	if !shouldSharpen && params.SharpenAmount == 0 {
+		// AI didn't specify - use sensible defaults
+		shouldSharpen = true
+		params.SharpenAmount = 150
+		params.SharpenRadius = 0.75
+		params.SharpenContrast = 15
+	}
+	if shouldSharpen {
+		sb.WriteString("Enabled=true\n")
+		contrast := params.SharpenContrast
+		if contrast == 0 {
+			contrast = 15
+		}
+		sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(contrast, 0, 100)))
+		sb.WriteString("Method=rld\n") // RL Deconvolution
+		radius := params.SharpenRadius
+		if radius < 0.3 {
+			radius = 0.75
+		}
+		sb.WriteString(fmt.Sprintf("Radius=%.2f\n", radius))
+		amount := params.SharpenAmount
+		if amount == 0 {
+			amount = 150
+		}
+		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(amount, 0, 1000)))
+		sb.WriteString("Threshold=20;80;2000;1200;\n")
+		sb.WriteString("OnlyEdges=false\n")
+		sb.WriteString("EdgedetectionRadius=1.9\n")
+		sb.WriteString("EdgeTolerance=1800\n")
+		sb.WriteString("HalocontrolEnabled=true\n")
+		sb.WriteString("HalocontrolAmount=75\n")
+		sb.WriteString("DeconvRadius=0.75\n")
+		sb.WriteString(fmt.Sprintf("DeconvAmount=%d\n", clamp(amount/2, 50, 200)))
+		sb.WriteString("DeconvAutoRadius=true\n")
+		sb.WriteString("DeconvCornerBoost=0\n")
+		sb.WriteString("DeconvCornerLatitude=25\n")
+	} else {
+		sb.WriteString("Enabled=false\n")
+	}
+
+	// --- Edge Sharpening (controlled by AI, with smart defaults) ---
+	sb.WriteString("\n[SharpenEdge]\n")
+	shouldEdgeSharpen := params.EdgeSharpenEnabled || params.EdgeSharpenAmount > 0
+	if !shouldEdgeSharpen && params.EdgeSharpenAmount == 0 {
+		// AI didn't specify - use sensible defaults
+		shouldEdgeSharpen = true
+		params.EdgeSharpenAmount = 25
+		params.EdgeSharpenPasses = 2
+	}
+	if shouldEdgeSharpen {
+		sb.WriteString("Enabled=true\n")
+		passes := params.EdgeSharpenPasses
+		if passes < 1 {
+			passes = 2
+		}
+		sb.WriteString(fmt.Sprintf("Passes=%d\n", clamp(passes, 1, 4)))
+		amount := params.EdgeSharpenAmount
+		if amount == 0 {
+			amount = 25
+		}
+		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(amount, 0, 100)))
+		sb.WriteString("ThreeChannels=false\n")
+	} else {
+		sb.WriteString("Enabled=false\n")
+	}
+
+	// --- Noise Reduction ---
+	if params.NRLuminance > 0 || params.NRChrominance > 0 {
+		sb.WriteString("\n[Denoise]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Luminance=%d\n", clamp(params.NRLuminance, 0, 100)))
+		sb.WriteString("LuminanceDetail=50\n")
+		sb.WriteString("LuminanceContrast=0\n")
+		sb.WriteString(fmt.Sprintf("Chrominance=%d\n", clamp(params.NRChrominance, 0, 100)))
+		sb.WriteString("ChrominanceMethod=Automatic\n")
+		sb.WriteString("ChrominanceAutoFactor=1\n")
+	}
+
+	// --- Vignette ---
+	if params.VignetteAmount != 0 {
+		sb.WriteString("\n[Vignetting Correction]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(params.VignetteAmount, -100, 100)))
+		sb.WriteString("Radius=50\n")
+		sb.WriteString("Strength=1\n")
+		sb.WriteString("CenterX=0\n")
+		sb.WriteString("CenterY=0\n")
+	}
+
+	// --- Lens Profile ---
+	sb.WriteString("\n[LensProfile]\n")
+	sb.WriteString("LcMode=lfauto\n")
+	sb.WriteString("LCPFile=\n")
+	sb.WriteString("UseDistortion=true\n")
+	sb.WriteString("UseVignette=true\n")
+	sb.WriteString("UseCA=true\n")
+
+	// --- RAW Processing ---
+	sb.WriteString("\n[RAW]\n")
+	sb.WriteString("DarkFrame=\n")
+	sb.WriteString("DarkFrameAuto=false\n")
+	sb.WriteString("FlatFieldFile=\n")
+	sb.WriteString("FlatFieldAutoSelect=false\n")
+	sb.WriteString("CA=true\n")
+	sb.WriteString("CAAutoIterations=2\n")
+	sb.WriteString("CAAvoidColourshift=true\n")
+	sb.WriteString("HotPixelFilter=true\n")
+	sb.WriteString("DeadPixelFilter=true\n")
+	sb.WriteString("HotDeadPixelThresh=100\n")
+
+	// --- Demosaicing (KEY for sharpness!) ---
+	sb.WriteString("\n[RAW Bayer]\n")
+	sb.WriteString("Method=amaze\n") // AMaZE is sharper than RCD
+	sb.WriteString("Border=4\n")
+	sb.WriteString("ImageNum=1\n")
+	sb.WriteString("CcSteps=0\n")
+	sb.WriteString("DCBIterations=2\n")
+	sb.WriteString("DCBEnhance=true\n")
+	sb.WriteString("LMMSEIterations=2\n")
+
+	// --- Capture Sharpening (demosaic-level sharpening - controlled by AI) ---
+	// --- Capture Sharpening (demosaic-level sharpening - with smart defaults) ---
+	sb.WriteString("\n[PostDemosaicSharpening]\n")
+	shouldCaptureSharp := params.CaptureSharpEnabled || params.CaptureSharpAmount > 0
+	if !shouldCaptureSharp && params.CaptureSharpAmount == 0 {
+		// AI didn't specify - use sensible defaults for crisp output
+		shouldCaptureSharp = true
+		params.CaptureSharpAmount = 100
+		params.CaptureSharpRadius = 0.75
+	}
+	if shouldCaptureSharp {
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString("Contrast=10\n")
+		sb.WriteString("AutoContrast=false\n")
+		sb.WriteString("AutoRadius=true\n")
+		radius := params.CaptureSharpRadius
+		if radius < 0.5 {
+			radius = 0.75
+		}
+		sb.WriteString(fmt.Sprintf("DeconvRadius=%.2f\n", radius))
+		sb.WriteString("DeconvRadiusOffset=0\n")
+		amount := params.CaptureSharpAmount
+		if amount == 0 {
+			amount = 100
+		}
+		sb.WriteString(fmt.Sprintf("DeconvAmount=%d\n", clamp(amount, 0, 200)))
+		sb.WriteString("DeconvIterations=30\n")
+		sb.WriteString("DeconvCornerBoost=0.35\n")
+		sb.WriteString("DeconvCornerLatitude=40\n")
+	} else {
+		sb.WriteString("Enabled=false\n")
+	}
+
+	// --- Color Management ---
+	sb.WriteString("\n[Color Management]\n")
+	sb.WriteString("InputProfile=(cameraICC)\n")
+	sb.WriteString("ToneCurve=false\n")
+	sb.WriteString("ApplyLookTable=true\n")
+	sb.WriteString("ApplyBaselineExposureOffset=true\n")
+	sb.WriteString("ApplyHueSatMap=true\n")
+	sb.WriteString("DCPIlluminant=0\n")
+	sb.WriteString("WorkingProfile=ProPhoto\n")
+	sb.WriteString("OutputProfile=RTv4_sRGB\n")
+	sb.WriteString("OutputProfileIntent=Relative\n")
+	sb.WriteString("OutputBPC=true\n")
+
+	// --- Resize (for output quality) ---
+	sb.WriteString("\n[Resize]\n")
+	sb.WriteString("Enabled=false\n")
+	sb.WriteString("AppliesTo=Cropped area\n")
+	sb.WriteString("Method=Lanczos\n")
+
+	return []byte(sb.String())
+}
+
+// GeneratePP3 creates a RawTherapee sidecar from Adobe-style GradingParams
+// This is the fallback method with parameter conversion
+func GeneratePP3(params models.GradingParams) []byte {
+	// === EXPOSURE CONVERSION ===
+	// Adobe Exposure range: -5.0 to +5.0 (stops)
+	// RT Compensation is similar but RT renders slightly darker by default
+	// Also need to factor in Whites/Blacks for overall brightness
+	compensation := params.Exposure2012
+	// RT needs a slight boost to match Adobe's default rendering
+	compensation += 0.25
+	// Factor in Whites - positive whites in Adobe add brightness
+	if params.Whites2012 > 0 {
+		compensation += float64(params.Whites2012) * 0.005 // Subtle addition
+	}
+
+	// === CONTRAST CONVERSION ===
+	// Adobe Contrast: -100 to +100
+	// RT Contrast: -100 to +100 (similar but applies differently)
+	// RT's contrast is more aggressive, so we scale it down slightly
+	contrast := int(float64(params.Contrast2012) * 0.8)
+
+	// === WHITE BALANCE CONVERSION ===
+	// Adobe Temperature: 2000-50000K
+	// RT Temperature: same range, direct mapping
+	temperature := params.Temperature
+	if temperature == 0 {
+		temperature = 5500 // Default daylight
+	}
+
+	// Adobe Tint: -150 to +150 (positive = magenta, negative = green)
+	// RT Green: 0.02 to 10.0 (>1.0 = green, <1.0 = magenta)
+	// Conversion: Adobe +150 -> RT ~0.5 (strong magenta)
+	//             Adobe -150 -> RT ~2.0 (strong green)
+	//             Adobe 0 -> RT 1.0 (neutral)
+	tint := 1.0
+	if params.Tint != 0 {
+		// Map -150..+150 to approximately 2.0..0.5
+		// Using exponential for more natural feel
+		tint = 1.0 * math.Pow(0.5, float64(params.Tint)/150.0)
+		tint = clampFloat(tint, 0.5, 2.0)
+	}
+
+	// === SATURATION CONVERSION ===
+	// Adobe Saturation: -100 to +100
+	// RT Saturation in [Exposure]: -100 to +100
+	// Direct mapping but RT is slightly more aggressive
+	saturation := int(float64(params.Saturation) * 0.85)
+
+	// === BLACK POINT CONVERSION ===
+	// Adobe Blacks: -100 to +100 (negative = darker blacks)
+	// RT Black: 0 to 32768 (higher = more clipping)
+	black := 0
+	if params.Blacks2012 < 0 {
+		// Adobe negative blacks = crush blacks = higher RT Black value
+		black = -params.Blacks2012 * 50 // More conservative scaling
+	}
+
+	// === HIGHLIGHTS/SHADOWS RECOVERY ===
+	// Adobe Highlights: -100 to +100 (negative = recover)
+	// Adobe Shadows: -100 to +100 (positive = recover)
+	// RT HighlightCompr: 0-500 (higher = more compression)
+	// RT ShadowRecovery: 0-100 (higher = more recovery)
+	// RT HighlightRecovery: 0-100 (different from HighlightCompr)
+
+	highlightCompr := 0
+	highlightRecovery := 0
+	shadowRecovery := 0
+
+	if params.Highlights2012 < 0 {
+		// Negative highlights = recover highlights
+		highlightCompr = -params.Highlights2012 * 3 // Scale to 0-300 range
+		highlightRecovery = clamp(-params.Highlights2012, 0, 100)
+	} else if params.Highlights2012 > 0 {
+		// Positive highlights = boost brightness in highlights
+		// This is handled through tone curve
+	}
+
+	if params.Shadows2012 > 0 {
+		// Positive shadows = lift shadows
+		shadowRecovery = params.Shadows2012
+	} else if params.Shadows2012 < 0 {
+		// Negative shadows = deepen shadows
+		// Factor into black point
+		black += -params.Shadows2012 * 20
+	}
+
+	// === CLARITY/TEXTURE CONVERSION ===
+	// Adobe Clarity: -100 to +100 (local contrast)
+	// Adobe Texture: -100 to +100 (fine detail)
+	// RT SharpenMicro is closest to Clarity
+	// RT uses different algorithm, so scale accordingly
+
+	// Clarity -> SharpenMicro (local contrast)
+	clarityStrength := 0
+	clarityContrast := 0
+	if params.Clarity2012 > 0 {
+		clarityStrength = params.Clarity2012 / 2 // 0-50 range
+		clarityContrast = params.Clarity2012 / 4 // 0-25 range
+	} else if params.Clarity2012 < 0 {
+		// Negative clarity = soften, we can't really do this with SharpenMicro
+		// Just leave it at 0
+	}
+
+	// Texture adds to clarity effect
+	if params.Texture > 0 {
+		clarityStrength += params.Texture / 4
+	}
+
+	// === VIBRANCE/SATURATION FINE TUNING ===
+	// Adobe Vibrance: -100 to +100 (protects skin tones)
+	// RT Vibrance Pastels/Saturated: -100 to +100
+	vibPastels := params.Vibrance       // Direct for less saturated colors
+	vibSaturated := params.Vibrance / 2 // Half effect on already saturated
+
+	// === DEHAZE CONVERSION ===
+	// Adobe Dehaze: -100 to +100
+	// RT Dehaze Strength: -100 to +100
+	// Direct mapping, but RT's dehaze is more aggressive
+	dehazeStrength := int(float64(params.Dehaze) * 0.7)
+
+	// === SHARPENING CONVERSION ===
+	// Adobe Sharpness: 0 to 150
+	// RT Sharpen Amount: 0 to 1000
+	// RT uses deconvolution which is different from Adobe's USM
+	sharpenAmount := params.Sharpness * 3 // Scale to ~0-450 range
+	if sharpenAmount == 0 && params.Sharpness == 0 {
+		sharpenAmount = 100 // Sensible default
+	}
+
+	// === LAB ADJUSTMENTS ===
+	// These don't have direct Adobe equivalents but help match the look
+	labBrightness := 0
+	labContrast := params.Clarity2012 / 10 // Subtle contrast boost from clarity
+	labChromaticity := params.Vibrance / 5 // Subtle color boost from vibrance
+
+	// Factor in Whites/Blacks for Lab brightness
+	if params.Whites2012 != 0 || params.Blacks2012 != 0 {
+		// Whites brighten, Blacks darken
+		labBrightness = (params.Whites2012 - params.Blacks2012) / 10
+		labBrightness = clamp(labBrightness, -20, 20)
+	}
+
+	// === BUILD TONE CURVE FROM ADOBE PARAMETERS ===
+	// Adobe's tone curve is implicitly defined by Exposure, Contrast, Highlights, Shadows, Whites, Blacks
+	// We need to approximate this with RT's tone curve
+	toneCurve := buildToneCurveFromAdobe(params)
+
+	pp3 := &models.PP3Params{
+		Compensation:           compensation,
+		Contrast:               contrast,
+		Saturation:             saturation,
+		Black:                  clamp(black, 0, 3000),
+		HighlightCompr:         clamp(highlightCompr, 0, 300),
+		ShadowRecovery:         clamp(shadowRecovery, 0, 100),
+		HighlightRecovery:      clamp(highlightRecovery, 0, 100),
+		Temperature:            temperature,
+		Tint:                   tint,
+		LabBrightness:          clamp(labBrightness, -50, 50),
+		LabContrast:            clamp(labContrast, -30, 30),
+		LabChromaticity:        clamp(labChromaticity, -30, 30),
+		SharpenMicroStrength:   clamp(clarityStrength, 0, 60),
+		SharpenMicroContrast:   clamp(clarityContrast, 0, 40),
+		SharpenMicroUniformity: 50,
+		DehazeStrength:         clamp(dehazeStrength, -70, 70),
+		VibPastels:             clamp(vibPastels, -100, 100),
+		VibSaturated:           clamp(vibSaturated, -100, 100),
+		SharpenAmount:          clamp(sharpenAmount, 0, 500),
+		SharpenRadius:          0.75,
+		NRLuminance:            params.LuminanceSmoothing,
+		NRChrominance:          params.ColorNoiseReduction,
+		VignetteAmount:         params.PostCropVignetteAmount,
+		ToneCurve:              toneCurve,
+	}
+
+	// Color toning from split toning
+	if params.SplitToningShadowSaturation > 0 || params.SplitToningHighlightSaturation > 0 {
+		shR, shG, shB := hueToRGB(params.SplitToningShadowHue, params.SplitToningShadowSaturation)
+		hlR, hlG, hlB := hueToRGB(params.SplitToningHighlightHue, params.SplitToningHighlightSaturation)
+		pp3.ColorToningShadowR = shR
+		pp3.ColorToningShadowG = shG
+		pp3.ColorToningShadowB = shB
+		pp3.ColorToningHighlightR = hlR
+		pp3.ColorToningHighlightG = hlG
+		pp3.ColorToningHighlightB = hlB
+		pp3.ColorToningBalance = 50 + params.SplitToningBalance/2
+	}
+
+	return GeneratePP3FromNative(pp3)
+}
+
+// buildToneCurveFromAdobe creates a tone curve that approximates Adobe's parametric adjustments
+func buildToneCurveFromAdobe(params models.GradingParams) [][]float64 {
+	// Adobe's tone controls affect different parts of the curve:
+	// - Blacks: affects the darkest tones (0-25%)
+	// - Shadows: affects dark tones (10-40%)
+	// - Highlights: affects bright tones (60-90%)
+	// - Whites: affects the brightest tones (75-100%)
+	// - Contrast: affects the S-curve steepness
+
+	// Start with 5-point linear curve
+	curve := [][]float64{
+		{0.0, 0.0},   // Black point
+		{0.25, 0.25}, // Shadows region
+		{0.5, 0.5},   // Midpoint
+		{0.75, 0.75}, // Highlights region
+		{1.0, 1.0},   // White point
+	}
+
+	// Apply Blacks adjustment (affects point 0 and 1)
+	if params.Blacks2012 != 0 {
+		// Positive blacks = lift blacks, negative = crush
+		blacksOffset := float64(params.Blacks2012) / 200.0 // ±0.5 max
+		curve[0][1] = clampFloat(curve[0][1]+blacksOffset*0.5, 0.0, 0.15)
+		curve[1][1] = clampFloat(curve[1][1]+blacksOffset*0.3, 0.05, 0.4)
+	}
+
+	// Apply Shadows adjustment (affects points 1 and 2)
+	if params.Shadows2012 != 0 {
+		// Positive shadows = lift shadows
+		shadowsOffset := float64(params.Shadows2012) / 150.0
+		curve[1][1] = clampFloat(curve[1][1]+shadowsOffset*0.15, 0.1, 0.45)
+		curve[2][1] = clampFloat(curve[2][1]+shadowsOffset*0.05, 0.35, 0.65)
+	}
+
+	// Apply Highlights adjustment (affects points 3 and 4)
+	if params.Highlights2012 != 0 {
+		// Negative highlights = recover/compress highlights
+		highlightsOffset := float64(params.Highlights2012) / 150.0
+		curve[3][1] = clampFloat(curve[3][1]+highlightsOffset*0.1, 0.6, 0.9)
+		curve[4][1] = clampFloat(curve[4][1]+highlightsOffset*0.05, 0.85, 1.0)
+	}
+
+	// Apply Whites adjustment (affects points 3 and 4)
+	if params.Whites2012 != 0 {
+		// Positive whites = push whites brighter
+		whitesOffset := float64(params.Whites2012) / 200.0
+		curve[3][1] = clampFloat(curve[3][1]+whitesOffset*0.05, 0.6, 0.95)
+		curve[4][1] = clampFloat(curve[4][1]+whitesOffset*0.1, 0.9, 1.0)
+	}
+
+	// Apply Contrast (S-curve adjustment)
+	if params.Contrast2012 != 0 {
+		// Positive contrast = steeper S-curve
+		contrastFactor := float64(params.Contrast2012) / 200.0
+		// Pull shadows down and highlights up
+		curve[1][1] = clampFloat(curve[1][1]-contrastFactor*0.08, 0.05, 0.4)
+		curve[3][1] = clampFloat(curve[3][1]+contrastFactor*0.08, 0.6, 0.95)
+	}
+
+	return curve
+}
+
+// hueToRGB converts Adobe's Hue (0-360) and Saturation (0-100) to RT's RGB values
+func hueToRGB(hue, saturation int) (r, g, b int) {
+	if saturation == 0 {
+		return 0, 0, 0
+	}
+
+	h := float64(hue) / 360.0
+	s := float64(saturation) / 100.0
+
+	var rf, gf, bf float64
+	h6 := h * 6.0
+	i := int(h6) % 6
+	f := h6 - float64(int(h6))
+
+	switch i {
+	case 0:
+		rf, gf, bf = 1, f, 0
+	case 1:
+		rf, gf, bf = 1-f, 1, 0
+	case 2:
+		rf, gf, bf = 0, 1, f
+	case 3:
+		rf, gf, bf = 0, 1-f, 1
+	case 4:
+		rf, gf, bf = f, 0, 1
+	case 5:
+		rf, gf, bf = 1, 0, 1-f
+	}
+
+	scale := s * 100.0
+	r = int((rf - 0.5) * 2 * scale)
+	g = int((gf - 0.5) * 2 * scale)
+	b = int((bf - 0.5) * 2 * scale)
+
+	return clamp(r, -100, 100), clamp(g, -100, 100), clamp(b, -100, 100)
+}

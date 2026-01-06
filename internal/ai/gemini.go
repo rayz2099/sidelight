@@ -206,3 +206,211 @@ Output ONLY the JSON object.`, systemInstruction, metadataInfo, styleInstruction
 
 	return &params, nil
 }
+
+const pp3SystemInstruction = `You are an expert photo colorist specializing in RawTherapee. Your task is to analyze an image and generate PP3 parameters that produce professional results comparable to Adobe Lightroom.
+
+🎯 TARGET LOOK:
+- Clean, transparent image with excellent clarity (not hazy or muddy)
+- Rich but natural colors (avoid oversaturation)
+- Proper exposure with good dynamic range
+- Professional sharpness without artifacts
+- Warm, inviting tones (Lightroom's signature look)
+
+⚠️ CRITICAL RULES - READ CAREFULLY:
+1. ALL curve values MUST be in 0.0-1.0 range (NOT 0-255!)
+2. Compensation should be positive (0.2-0.8) - RT renders darker than LR
+3. For curves: x=input, y=output. Points should go from [0,0] to [1,1]
+4. Never return empty tone_curve - always provide at least a basic S-curve
+5. Black point (black) should be 0-300 typically, not thousands
+
+📊 PARAMETER GUIDELINES (use these ranges for natural results):
+
+EXPOSURE & TONE:
+- compensation: 0.25 to 0.65 (CRITICAL: this is the main brightness control)
+- contrast: 8 to 20 (subtle contrast boost)
+- saturation: 5 to 15 (overall saturation)
+- black: 50 to 250 (for richer blacks, increases contrast)
+- highlight_compr: 50 to 150 (recover blown highlights)
+- shadow_recovery: 20 to 50 (open shadows)
+- highlight_recovery: 20 to 50 (protect highlights)
+
+WHITE BALANCE:
+- temperature: 4800-6500 for daylight, 3200 for tungsten, 7500 for cloudy
+- tint: 0.95-1.05 (1.0 = neutral green/magenta)
+
+LAB (KEY for LR-like punch):
+- lab_brightness: 2 to 8 (adds luminosity)
+- lab_contrast: 12 to 25 (CRITICAL: adds punch and depth)
+- lab_chromaticity: 15 to 30 (CRITICAL: color vibrancy/pop)
+
+CLARITY/MICRO-CONTRAST:
+- sharpenmicro_strength: 25 to 45 (local contrast/clarity)
+- sharpenmicro_contrast: 20 to 35
+- sharpenmicro_uniformity: 50 to 65
+
+DEHAZE (for transparency):
+- dehaze_strength: 8 to 20 (adds clarity and removes haze)
+
+VIBRANCE:
+- vib_pastels: 18 to 35 (boosts muted colors)
+- vib_saturated: 8 to 18 (protects already-saturated colors)
+
+SHARPENING (all should be enabled):
+- sharpen_enabled: true
+- sharpen_amount: 180 to 280
+- sharpen_radius: 0.65 to 0.85
+- sharpen_contrast: 12 to 22
+
+EDGE SHARPENING:
+- edge_sharpen_enabled: true
+- edge_sharpen_amount: 28 to 45
+- edge_sharpen_passes: 2
+
+CAPTURE SHARPENING:
+- capture_sharp_enabled: true
+- capture_sharp_amount: 85 to 130
+- capture_sharp_radius: 0.70 to 0.90
+
+NOISE REDUCTION (adjust based on ISO):
+- Low ISO (<800): nr_luminance=3-8, nr_chrominance=5-12
+- Medium ISO (800-3200): nr_luminance=10-18, nr_chrominance=12-20
+- High ISO (>3200): nr_luminance=18-30, nr_chrominance=20-35
+
+🎨 TONE CURVE (S-curve is essential for that LR look):
+Must be array of [x,y] points from shadows to highlights.
+Example gentle S-curve: [[0,0], [0.12,0.08], [0.25,0.22], [0.5,0.54], [0.75,0.80], [0.88,0.92], [1,1]]
+- Shadows (x<0.3): y should be slightly below x (adds contrast)
+- Midtones (x≈0.5): y should be 0.52-0.58 (brightens image)
+- Highlights (x>0.7): y should be slightly above x (opens highlights)
+
+🎨 RGB CURVES (for color warmth):
+For warm/Lightroom look:
+- r_curve: [[0,0], [0.5,0.52], [1,1]] (slight red boost)
+- g_curve: [] or [[0,0], [1,1]] (neutral)
+- b_curve: [[0,0], [0.5,0.47], [1,1]] (slight blue reduction)
+
+For cool look: reverse r_curve and b_curve adjustments
+
+COLOR TONING (subtle split toning):
+- ct_shadow_r/g/b: -15 to 15 (subtle shadow color)
+- ct_highlight_r/g/b: -15 to 15 (subtle highlight color)
+- ct_balance: 45 to 55
+
+VIGNETTE:
+- vignette_amount: -25 to -8 for subtle darkening, 0 for none
+
+Output ONLY valid JSON matching this schema:
+{
+  "compensation": float,
+  "contrast": int,
+  "saturation": int,
+  "black": int,
+  "highlight_compr": int,
+  "shadow_recovery": int,
+  "highlight_recovery": int,
+  "temperature": int,
+  "tint": float,
+  "lab_brightness": int,
+  "lab_contrast": int,
+  "lab_chromaticity": int,
+  "sharpenmicro_strength": int,
+  "sharpenmicro_contrast": int,
+  "sharpenmicro_uniformity": int,
+  "dehaze_strength": int,
+  "vib_pastels": int,
+  "vib_saturated": int,
+  "sharpen_enabled": bool,
+  "sharpen_amount": int,
+  "sharpen_radius": float,
+  "sharpen_contrast": int,
+  "edge_sharpen_enabled": bool,
+  "edge_sharpen_amount": int,
+  "edge_sharpen_passes": int,
+  "capture_sharp_enabled": bool,
+  "capture_sharp_amount": int,
+  "capture_sharp_radius": float,
+  "nr_luminance": int,
+  "nr_chrominance": int,
+  "tone_curve": [[x,y], ...],
+  "l_curve": [],
+  "r_curve": [[x,y], ...],
+  "g_curve": [],
+  "b_curve": [[x,y], ...],
+  "ct_shadow_r": int,
+  "ct_shadow_g": int,
+  "ct_shadow_b": int,
+  "ct_highlight_r": int,
+  "ct_highlight_g": int,
+  "ct_highlight_b": int,
+  "ct_balance": int,
+  "vignette_amount": int
+}`
+
+func (g *GeminiClient) AnalyzeImageForPP3(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.PP3Params, error) {
+	styleInstruction := styles["natural"]
+	if instruction, ok := styles[opts.Style]; ok {
+		styleInstruction = instruction
+	}
+
+	metadataInfo := fmt.Sprintf(`Image Metadata:
+- Camera: %s %s
+- Lens: %s
+- ISO: %d
+- Aperture: %s
+- Shutter Speed: %s
+- Date: %s`, metadata.Make, metadata.Model, metadata.Lens, metadata.ISO, metadata.Aperture, metadata.ShutterSpeed, metadata.DateTime)
+
+	// Build user instruction section
+	userInstructions := ""
+	if opts.UserPrompt != "" {
+		userInstructions = fmt.Sprintf("\n\n🎯 USER SPECIFIC INSTRUCTIONS (prioritize these):\n%s", opts.UserPrompt)
+	}
+
+	fullPrompt := fmt.Sprintf(`%s
+
+%s
+    
+📷 Style Goal: %s
+%s
+
+IMPORTANT: Analyze the actual image content and metadata. Adjust parameters based on:
+- Subject matter (portrait, landscape, etc.)
+- Lighting conditions
+- ISO level (for noise reduction)
+- Overall mood and style goal
+
+Output ONLY the JSON object - no explanations, no markdown formatting.`,
+		pp3SystemInstruction, metadataInfo, styleInstruction, userInstructions)
+
+	prompt := []genai.Part{
+		genai.ImageData("jpeg", imageData),
+		genai.Text(fullPrompt),
+	}
+
+	resp, err := g.model.GenerateContent(ctx, prompt...)
+	if err != nil {
+		return nil, fmt.Errorf("gemini generation failed: %w", err)
+	}
+
+	if len(resp.Candidates) == 0 {
+		return nil, fmt.Errorf("no candidates returned from gemini")
+	}
+
+	part := resp.Candidates[0].Content.Parts[0]
+	text, ok := part.(genai.Text)
+	if !ok {
+		return nil, fmt.Errorf("unexpected response part type: %T", part)
+	}
+
+	cleanJSON := strings.TrimSpace(string(text))
+	cleanJSON = strings.TrimPrefix(cleanJSON, "```json")
+	cleanJSON = strings.TrimSuffix(cleanJSON, "```")
+	cleanJSON = strings.TrimSpace(cleanJSON)
+
+	var params models.PP3Params
+	if err := json.Unmarshal([]byte(cleanJSON), &params); err != nil {
+		return nil, fmt.Errorf("failed to parse AI response: %w (raw: %s)", err, cleanJSON)
+	}
+
+	return &params, nil
+}
