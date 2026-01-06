@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"sidelight/pkg/models"
@@ -17,22 +18,42 @@ type GeminiClient struct {
 	model  *genai.GenerativeModel
 }
 
+// bearerTokenTransport adds Bearer token authentication for proxy endpoints
+type bearerTokenTransport struct {
+	apiKey    string
+	transport http.RoundTripper
+}
+
+func (t *bearerTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	newReq := req.Clone(req.Context())
+	newReq.Header.Set("Authorization", "Bearer "+t.apiKey)
+	return t.transport.RoundTrip(newReq)
+}
+
 func NewGeminiClient(ctx context.Context, apiKey, endpoint string, modelName string) (*GeminiClient, error) {
 	opts := []option.ClientOption{option.WithAPIKey(apiKey)}
+
+	// If using a custom endpoint (proxy), add Bearer token auth
 	if endpoint != "" {
 		opts = append(opts, option.WithEndpoint(endpoint))
+		opts = append(opts, option.WithHTTPClient(&http.Client{
+			Transport: &bearerTokenTransport{
+				apiKey:    apiKey,
+				transport: http.DefaultTransport,
+			},
+		}))
 	}
+
 	if len(modelName) == 0 {
 		modelName = "gemini-2.5-flash"
 	}
+
 	client, err := genai.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gemini client: %w", err)
 	}
 
 	model := client.GenerativeModel(modelName)
-	// 注意：不设置 ResponseMIMEType，因为某些代理可能不支持
-	// 改为在 prompt 中明确要求 JSON 格式
 	return &GeminiClient{
 		client: client,
 		model:  model,
@@ -207,148 +228,83 @@ Output ONLY the JSON object.`, systemInstruction, metadataInfo, styleInstruction
 	return &params, nil
 }
 
-const pp3SystemInstruction = `You are an expert photo colorist specializing in RawTherapee. Your task is to analyze an image and generate PP3 parameters that produce professional results comparable to Adobe Lightroom.
+// pp3Styles contains RawTherapee-specific style instructions with RT parameter guidance
+var pp3Styles = map[string]string{
+	"natural": `Natural look: accurate colors, balanced exposure.
+compensation=0.45, contrast=12, lab_contrast=18, lab_chromaticity=20`,
 
-🎯 TARGET LOOK:
-- Clean, transparent image with excellent clarity (not hazy or muddy)
-- Rich but natural colors (avoid oversaturation)
-- Proper exposure with good dynamic range
-- Professional sharpness without artifacts
-- Warm, inviting tones (Lightroom's signature look)
+	"vivid": `Vibrant colors, punchy contrast.
+compensation=0.48, contrast=18, lab_contrast=25, lab_chromaticity=30, vib_pastels=30`,
 
-⚠️ CRITICAL RULES - READ CAREFULLY:
-1. ALL curve values MUST be in 0.0-1.0 range (NOT 0-255!)
-2. Compensation should be positive (0.2-0.8) - RT renders darker than LR
-3. For curves: x=input, y=output. Points should go from [0,0] to [1,1]
-4. Never return empty tone_curve - always provide at least a basic S-curve
-5. Black point (black) should be 0-300 typically, not thousands
+	"film": `Film look: warm tones, lifted blacks.
+compensation=0.50, contrast=10, lab_chromaticity=22, temperature=5800`,
 
-📊 PARAMETER GUIDELINES (use these ranges for natural results):
+	"kodak": `Kodak Portra: warm, creamy skin tones.
+compensation=0.48, contrast=12, lab_chromaticity=20, temperature=5700, tint=0.98`,
 
-EXPOSURE & TONE:
-- compensation: 0.25 to 0.65 (CRITICAL: this is the main brightness control)
-- contrast: 8 to 20 (subtle contrast boost)
-- saturation: 5 to 15 (overall saturation)
-- black: 50 to 250 (for richer blacks, increases contrast)
-- highlight_compr: 50 to 150 (recover blown highlights)
-- shadow_recovery: 20 to 50 (open shadows)
-- highlight_recovery: 20 to 50 (protect highlights)
+	"fuji": `Fujifilm: COOL tones, hard contrast, punchy.
+compensation=0.42, contrast=20, lab_contrast=25, lab_chromaticity=25, temperature=4900, tint=0.97`,
 
-WHITE BALANCE:
-- temperature: 4800-6500 for daylight, 3200 for tungsten, 7500 for cloudy
-- tint: 0.95-1.05 (1.0 = neutral green/magenta)
+	"cinematic": `Movie look: moody, controlled contrast.
+compensation=0.42, contrast=15, lab_contrast=20, lab_chromaticity=18`,
 
-LAB (KEY for LR-like punch):
-- lab_brightness: 2 to 8 (adds luminosity)
-- lab_contrast: 12 to 25 (CRITICAL: adds punch and depth)
-- lab_chromaticity: 15 to 30 (CRITICAL: color vibrancy/pop)
+	"landscape": `Landscape: enhanced sky and foliage.
+compensation=0.40, contrast=18, lab_contrast=22, lab_chromaticity=28, vib_pastels=25`,
 
-CLARITY/MICRO-CONTRAST:
-- sharpenmicro_strength: 25 to 45 (local contrast/clarity)
-- sharpenmicro_contrast: 20 to 35
-- sharpenmicro_uniformity: 50 to 65
+	"portrait": `Portrait: flattering skin tones, soft.
+compensation=0.48, contrast=10, lab_contrast=15, lab_chromaticity=18, vib_pastels=15`,
 
-DEHAZE (for transparency):
-- dehaze_strength: 8 to 20 (adds clarity and removes haze)
+	"bw": `Black and white.
+compensation=0.45, contrast=20, saturation=-100, lab_contrast=25`,
 
-VIBRANCE:
-- vib_pastels: 18 to 35 (boosts muted colors)
-- vib_saturated: 8 to 18 (protects already-saturated colors)
+	"matte": `Matte/faded look.
+compensation=0.52, contrast=8, lab_contrast=12, lab_chromaticity=15`,
+}
 
-SHARPENING (all should be enabled):
-- sharpen_enabled: true
-- sharpen_amount: 180 to 280
-- sharpen_radius: 0.65 to 0.85
-- sharpen_contrast: 12 to 22
+const pp3SystemInstruction = `You are a RawTherapee color grading expert. Generate SIMPLE PP3 parameters.
 
-EDGE SHARPENING:
-- edge_sharpen_enabled: true
-- edge_sharpen_amount: 28 to 45
-- edge_sharpen_passes: 2
+⚠️ IMPORTANT:
+- compensation MUST be 0.35-0.55 (RT renders dark, this controls brightness)
+- Keep parameters conservative to avoid artifacts
 
-CAPTURE SHARPENING:
-- capture_sharp_enabled: true
-- capture_sharp_amount: 85 to 130
-- capture_sharp_radius: 0.70 to 0.90
+📊 ONLY THESE PARAMETERS (all others will be ignored):
+- compensation: 0.35-0.55 (brightness, REQUIRED)
+- contrast: 5-25 (image contrast)
+- saturation: 0-15 (color saturation)
+- black: 0-150 (black point)
+- highlight_compr: 0-150 (highlight compression)
+- temperature: 4500-7000 (white balance kelvin, 5500=daylight)
+- tint: 0.92-1.08 (green-magenta, 1.0=neutral)
+- lab_brightness: 0-15 (luminance)
+- lab_contrast: 10-30 (local contrast)
+- lab_chromaticity: 10-35 (color vibrancy)
+- vib_pastels: 10-40 (boost muted colors)
+- vib_saturated: 5-20 (protect saturated colors)
+- nr_luminance: 0-30 (noise reduction based on ISO)
+- nr_chrominance: 0-30 (color noise reduction)
 
-NOISE REDUCTION (adjust based on ISO):
-- Low ISO (<800): nr_luminance=3-8, nr_chrominance=5-12
-- Medium ISO (800-3200): nr_luminance=10-18, nr_chrominance=12-20
-- High ISO (>3200): nr_luminance=18-30, nr_chrominance=20-35
-
-🎨 TONE CURVE (S-curve is essential for that LR look):
-Must be array of [x,y] points from shadows to highlights.
-Example gentle S-curve: [[0,0], [0.12,0.08], [0.25,0.22], [0.5,0.54], [0.75,0.80], [0.88,0.92], [1,1]]
-- Shadows (x<0.3): y should be slightly below x (adds contrast)
-- Midtones (x≈0.5): y should be 0.52-0.58 (brightens image)
-- Highlights (x>0.7): y should be slightly above x (opens highlights)
-
-🎨 RGB CURVES (for color warmth):
-For warm/Lightroom look:
-- r_curve: [[0,0], [0.5,0.52], [1,1]] (slight red boost)
-- g_curve: [] or [[0,0], [1,1]] (neutral)
-- b_curve: [[0,0], [0.5,0.47], [1,1]] (slight blue reduction)
-
-For cool look: reverse r_curve and b_curve adjustments
-
-COLOR TONING (subtle split toning):
-- ct_shadow_r/g/b: -15 to 15 (subtle shadow color)
-- ct_highlight_r/g/b: -15 to 15 (subtle highlight color)
-- ct_balance: 45 to 55
-
-VIGNETTE:
-- vignette_amount: -25 to -8 for subtle darkening, 0 for none
-
-Output ONLY valid JSON matching this schema:
+Output ONLY this JSON:
 {
-  "compensation": float,
-  "contrast": int,
-  "saturation": int,
-  "black": int,
-  "highlight_compr": int,
-  "shadow_recovery": int,
-  "highlight_recovery": int,
-  "temperature": int,
-  "tint": float,
-  "lab_brightness": int,
-  "lab_contrast": int,
-  "lab_chromaticity": int,
-  "sharpenmicro_strength": int,
-  "sharpenmicro_contrast": int,
-  "sharpenmicro_uniformity": int,
-  "dehaze_strength": int,
-  "vib_pastels": int,
-  "vib_saturated": int,
-  "sharpen_enabled": bool,
-  "sharpen_amount": int,
-  "sharpen_radius": float,
-  "sharpen_contrast": int,
-  "edge_sharpen_enabled": bool,
-  "edge_sharpen_amount": int,
-  "edge_sharpen_passes": int,
-  "capture_sharp_enabled": bool,
-  "capture_sharp_amount": int,
-  "capture_sharp_radius": float,
-  "nr_luminance": int,
-  "nr_chrominance": int,
-  "tone_curve": [[x,y], ...],
-  "l_curve": [],
-  "r_curve": [[x,y], ...],
-  "g_curve": [],
-  "b_curve": [[x,y], ...],
-  "ct_shadow_r": int,
-  "ct_shadow_g": int,
-  "ct_shadow_b": int,
-  "ct_highlight_r": int,
-  "ct_highlight_g": int,
-  "ct_highlight_b": int,
-  "ct_balance": int,
-  "vignette_amount": int
+  "compensation": 0.45,
+  "contrast": 15,
+  "saturation": 8,
+  "black": 80,
+  "highlight_compr": 60,
+  "temperature": 5500,
+  "tint": 1.0,
+  "lab_brightness": 5,
+  "lab_contrast": 18,
+  "lab_chromaticity": 22,
+  "vib_pastels": 20,
+  "vib_saturated": 10,
+  "nr_luminance": 8,
+  "nr_chrominance": 12
 }`
 
 func (g *GeminiClient) AnalyzeImageForPP3(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.PP3Params, error) {
-	styleInstruction := styles["natural"]
-	if instruction, ok := styles[opts.Style]; ok {
+	// Use RT-specific styles instead of generic Adobe styles
+	styleInstruction := pp3Styles["natural"]
+	if instruction, ok := pp3Styles[opts.Style]; ok {
 		styleInstruction = instruction
 	}
 
@@ -373,13 +329,7 @@ func (g *GeminiClient) AnalyzeImageForPP3(ctx context.Context, imageData []byte,
 📷 Style Goal: %s
 %s
 
-IMPORTANT: Analyze the actual image content and metadata. Adjust parameters based on:
-- Subject matter (portrait, landscape, etc.)
-- Lighting conditions
-- ISO level (for noise reduction)
-- Overall mood and style goal
-
-Output ONLY the JSON object - no explanations, no markdown formatting.`,
+Analyze the image and generate RT parameters. Output ONLY JSON.`,
 		pp3SystemInstruction, metadataInfo, styleInstruction, userInstructions)
 
 	prompt := []genai.Part{
@@ -392,8 +342,30 @@ Output ONLY the JSON object - no explanations, no markdown formatting.`,
 		return nil, fmt.Errorf("gemini generation failed: %w", err)
 	}
 
+	if resp == nil {
+		return nil, fmt.Errorf("gemini returned nil response")
+	}
+
+	// Check for prompt feedback (safety blocks, etc.)
+	if resp.PromptFeedback != nil {
+		if resp.PromptFeedback.BlockReason != 0 {
+			return nil, fmt.Errorf("prompt blocked by gemini: reason=%v", resp.PromptFeedback.BlockReason)
+		}
+	}
+
 	if len(resp.Candidates) == 0 {
-		return nil, fmt.Errorf("no candidates returned from gemini")
+		// Try to get more info
+		return nil, fmt.Errorf("no candidates returned from gemini (promptFeedback=%+v)", resp.PromptFeedback)
+	}
+
+	// Check if candidate was blocked
+	if resp.Candidates[0].FinishReason != 0 && resp.Candidates[0].FinishReason != 1 {
+		// 1 = Stop (normal), other values indicate issues
+		return nil, fmt.Errorf("candidate finished with reason: %v", resp.Candidates[0].FinishReason)
+	}
+
+	if resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("candidate has no content parts")
 	}
 
 	part := resp.Candidates[0].Content.Parts[0]

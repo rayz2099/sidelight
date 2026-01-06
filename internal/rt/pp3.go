@@ -19,6 +19,14 @@ func clamp(val, min, max int) int {
 	return val
 }
 
+// abs returns the absolute value of an integer
+func abs(val int) int {
+	if val < 0 {
+		return -val
+	}
+	return val
+}
+
 // normalizeCurve detects if values are 0-255 and converts to 0.0-1.0
 // Returns the normalized points
 func normalizeCurve(points [][]float64) [][]float64 {
@@ -195,387 +203,271 @@ func clampFloat(val, min, max float64) float64 {
 }
 
 // sanitizeParams ensures all PP3 params are within safe ranges
-// This prevents black/white images from extreme AI values
+// This prevents dark/purple/oversaturated images from extreme AI values
 func sanitizeParams(params *models.PP3Params) {
-	// Exposure compensation: ensure it's not too extreme
-	// RT renders darker, so we need positive compensation usually
-	if params.Compensation < -2.0 {
-		params.Compensation = -2.0
+	// === EXPOSURE - CRITICAL FOR BRIGHTNESS ===
+	// RT renders darker than LR, compensation MUST be positive for normal exposure
+	if params.Compensation < 0.25 {
+		params.Compensation = 0.4 // Safe default
 	}
-	if params.Compensation > 4.0 {
-		params.Compensation = 4.0
-	}
-	// If compensation is 0 or very small, set a sensible default
-	if params.Compensation >= -0.05 && params.Compensation <= 0.05 {
-		params.Compensation = 0.35 // Default slight boost for RT
+	if params.Compensation > 1.5 {
+		params.Compensation = 1.5
 	}
 
-	// Black point: too high causes loss of shadow detail
-	if params.Black > 500 {
-		params.Black = 500
+	// === CONTRAST - keep moderate ===
+	if params.Contrast < -20 {
+		params.Contrast = -20
+	}
+	if params.Contrast > 30 {
+		params.Contrast = 30
 	}
 
-	// Highlight compression: too high causes flat highlights
-	if params.HighlightCompr > 300 {
-		params.HighlightCompr = 300
+	// === BLACK POINT - too high crushes shadows ===
+	if params.Black > 200 {
+		params.Black = 200
 	}
 
-	// Lab chromaticity: too high causes oversaturation
-	if params.LabChromaticity > 50 {
-		params.LabChromaticity = 50
-	}
-	if params.LabChromaticity < -30 {
-		params.LabChromaticity = -30
+	// === HIGHLIGHT COMPRESSION - too high makes flat image ===
+	if params.HighlightCompr > 180 {
+		params.HighlightCompr = 180
 	}
 
-	// Dehaze: extreme values cause issues
-	if params.DehazeStrength > 50 {
-		params.DehazeStrength = 50
+	// === HIGHLIGHT/SHADOW RECOVERY ===
+	if params.HighlightRecovery > 70 {
+		params.HighlightRecovery = 70
 	}
-	if params.DehazeStrength < -30 {
-		params.DehazeStrength = -30
-	}
-
-	// Temperature sanity check
-	if params.Temperature < 2000 || params.Temperature > 12000 {
-		params.Temperature = 5500 // Daylight default
+	if params.ShadowRecovery > 60 {
+		params.ShadowRecovery = 60
 	}
 
-	// Tint sanity check
-	if params.Tint < 0.5 || params.Tint > 2.0 {
-		params.Tint = 1.0 // Neutral
+	// === LAB ADJUSTMENTS ===
+	// Brightness should not be negative (makes image dark)
+	if params.LabBrightness < 0 {
+		params.LabBrightness = 0
+	}
+	if params.LabBrightness > 20 {
+		params.LabBrightness = 20
+	}
+
+	// Lab contrast
+	if params.LabContrast < 0 {
+		params.LabContrast = 0
+	}
+	if params.LabContrast > 40 {
+		params.LabContrast = 40
+	}
+
+	// Lab chromaticity - too high causes oversaturation
+	if params.LabChromaticity < 0 {
+		params.LabChromaticity = 0
+	}
+	if params.LabChromaticity > 45 {
+		params.LabChromaticity = 45
+	}
+
+	// === DEHAZE ===
+	if params.DehazeStrength < 0 {
+		params.DehazeStrength = 0
+	}
+	if params.DehazeStrength > 30 {
+		params.DehazeStrength = 30
+	}
+
+	// === WHITE BALANCE ===
+	// Temperature: allow cooler temps for Fuji-style looks
+	if params.Temperature < 4200 {
+		params.Temperature = 4200
+	}
+	if params.Temperature > 7500 {
+		params.Temperature = 7500
+	}
+
+	// Tint: allow slightly more range for stylistic effects
+	if params.Tint < 0.90 {
+		params.Tint = 0.90
+	}
+	if params.Tint > 1.10 {
+		params.Tint = 1.10
+	}
+
+	// === COLOR TONING - CRITICAL FOR SKIN TONES ===
+	// Limit color toning to avoid purple/green color casts
+	maxCT := 12
+	params.ColorToningShadowR = clamp(params.ColorToningShadowR, -maxCT, maxCT)
+	params.ColorToningShadowG = clamp(params.ColorToningShadowG, -maxCT, maxCT)
+	params.ColorToningShadowB = clamp(params.ColorToningShadowB, -maxCT, maxCT)
+	params.ColorToningHighlightR = clamp(params.ColorToningHighlightR, -maxCT, maxCT)
+	params.ColorToningHighlightG = clamp(params.ColorToningHighlightG, -maxCT, maxCT)
+	params.ColorToningHighlightB = clamp(params.ColorToningHighlightB, -maxCT, maxCT)
+
+	// === SATURATION ===
+	if params.Saturation < -10 {
+		params.Saturation = -10
+	}
+	if params.Saturation > 25 {
+		params.Saturation = 25
+	}
+
+	// === VIBRANCE ===
+	if params.VibPastels > 45 {
+		params.VibPastels = 45
+	}
+	if params.VibSaturated > 25 {
+		params.VibSaturated = 25
+	}
+
+	// === SHARPENING - keep moderate ===
+	if params.SharpenMicroStrength > 50 {
+		params.SharpenMicroStrength = 50
+	}
+	if params.SharpenMicroContrast > 40 {
+		params.SharpenMicroContrast = 40
+	}
+
+	// === TONE CURVE VALIDATION ===
+	// Ensure tone curve doesn't make image too dark
+	if len(params.ToneCurve) > 0 {
+		for i := range params.ToneCurve {
+			if len(params.ToneCurve[i]) >= 2 {
+				x := params.ToneCurve[i][0]
+				y := params.ToneCurve[i][1]
+				// Midtones (around 0.5) should not be darker than input
+				if x >= 0.4 && x <= 0.6 && y < x-0.1 {
+					params.ToneCurve[i][1] = x // Reset to linear
+				}
+				// Clamp all values to valid range
+				params.ToneCurve[i][0] = clampFloat(x, 0, 1)
+				params.ToneCurve[i][1] = clampFloat(y, 0, 1)
+			}
+		}
 	}
 }
 
 // GeneratePP3FromNative creates a RawTherapee PP3 file from native PP3 parameters
-// This is the preferred method for best quality - AI generates RT-native params directly
+// SIMPLIFIED version - only essential parameters to avoid artifacts
 func GeneratePP3FromNative(params *models.PP3Params) []byte {
-	// Sanitize parameters first to prevent extreme values
+	// Sanitize parameters first
 	sanitizeParams(params)
 
 	var sb strings.Builder
 
-	// Header
+	// === HEADER ===
 	sb.WriteString("[Version]\n")
 	sb.WriteString("Version=346\n")
 	sb.WriteString("Build=SideLight-AI\n\n")
 
-	// --- General ---
 	sb.WriteString("[General]\n")
 	sb.WriteString("Rank=0\n")
 	sb.WriteString("ColorLabel=0\n")
 	sb.WriteString("InTrash=false\n\n")
 
-	// --- Exposure ---
+	// === EXPOSURE (core) ===
 	sb.WriteString("[Exposure]\n")
 	sb.WriteString("Enabled=true\n")
 	sb.WriteString(fmt.Sprintf("Compensation=%.2f\n", params.Compensation))
-	sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.Contrast, -100, 100)))
-	sb.WriteString(fmt.Sprintf("Saturation=%d\n", clamp(params.Saturation, -100, 100)))
-	sb.WriteString(fmt.Sprintf("Black=%d\n", clamp(params.Black, 0, 32768)))
-	if params.HighlightCompr > 0 {
-		sb.WriteString(fmt.Sprintf("HighlightCompr=%d\n", clamp(params.HighlightCompr, 0, 500)))
-	}
-	sb.WriteString("HighlightComprThreshold=0\n")
+	sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.Contrast, -50, 50)))
+	sb.WriteString(fmt.Sprintf("Saturation=%d\n", clamp(params.Saturation, -50, 50)))
+	sb.WriteString(fmt.Sprintf("Black=%d\n", clamp(params.Black, 0, 300)))
+	sb.WriteString(fmt.Sprintf("HighlightCompr=%d\n", clamp(params.HighlightCompr, 0, 200)))
+	sb.WriteString("HighlightComprThreshold=0\n\n")
 
-	// --- Tone Curve (KEY for transparency!) ---
-	sb.WriteString("\n[ToneCurve]\n")
+	// === TONE CURVE (simple) ===
+	sb.WriteString("[ToneCurve]\n")
 	sb.WriteString("Enabled=true\n")
-	if len(params.ToneCurve) > 0 {
-		sb.WriteString(fmt.Sprintf("Curve=%s\n", formatCurveValidated(params.ToneCurve, "tone")))
-	} else {
-		// Default: near-linear curve with very subtle lift to match Adobe's base rendering
-		// Adobe applies a gentle base curve even at "Linear" - this approximates it
-		sb.WriteString("Curve=1;0;0;0.25;0.25;0.5;0.5;0.75;0.75;1;1;\n")
-	}
-	sb.WriteString("Curve2=0;\n")
+	// Use linear curve by default - let Exposure handle brightness
+	sb.WriteString("Curve=0;\n")
+	sb.WriteString("Curve2=0;\n\n")
 
-	// --- Shadows & Highlights ---
-	sb.WriteString("\n[Shadows & Highlights]\n")
-	sb.WriteString("Enabled=true\n")
-	sb.WriteString(fmt.Sprintf("Highlights=%d\n", clamp(params.HighlightRecovery, 0, 100)))
-	sb.WriteString("HighlightTonalWidth=70\n")
-	sb.WriteString(fmt.Sprintf("Shadows=%d\n", clamp(params.ShadowRecovery, 0, 100)))
-	sb.WriteString("ShadowTonalWidth=70\n")
-	sb.WriteString("Radius=40\n")
-	sb.WriteString("Lab=true\n")
-
-	// --- Luminance Curve (Lab - KEY for color pop!) ---
-	sb.WriteString("\n[Luminance Curve]\n")
-	sb.WriteString("Enabled=true\n")
-	sb.WriteString(fmt.Sprintf("Brightness=%d\n", clamp(params.LabBrightness, -100, 100)))
-	sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.LabContrast, -100, 100)))
-	sb.WriteString(fmt.Sprintf("Chromaticity=%d\n", clamp(params.LabChromaticity, -100, 100)))
-	sb.WriteString("RedAndSkinProtection=0\n")
-	// L curve - use AI generated or default
-	if len(params.LCurve) > 0 {
-		sb.WriteString(fmt.Sprintf("LCurve=%s\n", formatCurve(params.LCurve)))
-	} else {
-		sb.WriteString("LCurve=0;\n") // Linear if not specified
-	}
-
-	// --- SharpenMicro (Clarity equivalent - controlled by AI) ---
-	sb.WriteString("\n[SharpenMicro]\n")
-	sb.WriteString("Enabled=true\n")
-	sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.SharpenMicroStrength, 0, 100)))
-	sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.SharpenMicroContrast, 0, 100)))
-	sb.WriteString(fmt.Sprintf("Uniformity=%d\n", clamp(params.SharpenMicroUniformity, 0, 100)))
-	sb.WriteString("Matrix=false\n")
-
-	// --- Dehaze ---
-	sb.WriteString("\n[Dehaze]\n")
-	sb.WriteString("Enabled=true\n")
-	sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.DehazeStrength, -100, 100)))
-	sb.WriteString("ShowDepthMap=false\n")
-	sb.WriteString("Depth=25\n")
-	sb.WriteString("Saturation=60\n")
-
-	// --- White Balance ---
-	sb.WriteString("\n[White Balance]\n")
+	// === WHITE BALANCE ===
+	sb.WriteString("[White Balance]\n")
 	sb.WriteString("Enabled=true\n")
 	sb.WriteString("Setting=Custom\n")
 	temp := params.Temperature
-	if temp < 2500 {
-		temp = 5500 // Default
+	if temp < 3500 || temp > 9000 {
+		temp = 5500
 	}
 	sb.WriteString(fmt.Sprintf("Temperature=%d\n", temp))
 	tint := params.Tint
-	if tint < 0.2 || tint > 5.0 {
-		tint = 1.0 // Neutral
+	if tint < 0.7 || tint > 1.5 {
+		tint = 1.0
 	}
-	sb.WriteString(fmt.Sprintf("Green=%.6f\n", tint))
-	sb.WriteString("Equal=1\n")
+	sb.WriteString(fmt.Sprintf("Green=%.3f\n", tint))
+	sb.WriteString("Equal=1\n\n")
 
-	// --- Vibrance ---
-	sb.WriteString("\n[Vibrance]\n")
+	// === LAB ADJUSTMENTS (for color/contrast) ===
+	sb.WriteString("[Luminance Curve]\n")
 	sb.WriteString("Enabled=true\n")
-	sb.WriteString(fmt.Sprintf("Pastels=%d\n", clamp(params.VibPastels, -100, 100)))
-	sb.WriteString(fmt.Sprintf("Saturated=%d\n", clamp(params.VibSaturated, -100, 100)))
+	sb.WriteString(fmt.Sprintf("Brightness=%d\n", clamp(params.LabBrightness, -20, 20)))
+	sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.LabContrast, 0, 40)))
+	sb.WriteString(fmt.Sprintf("Chromaticity=%d\n", clamp(params.LabChromaticity, 0, 40)))
+	sb.WriteString("LCurve=0;\n\n")
+
+	// === VIBRANCE ===
+	sb.WriteString("[Vibrance]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString(fmt.Sprintf("Pastels=%d\n", clamp(params.VibPastels, -30, 50)))
+	sb.WriteString(fmt.Sprintf("Saturated=%d\n", clamp(params.VibSaturated, -30, 30)))
 	sb.WriteString("PSThreshold=0;75;\n")
 	sb.WriteString("ProtectSkins=true\n")
 	sb.WriteString("AvoidColorShift=true\n")
-	sb.WriteString("PastSatTog=true\n")
-	sb.WriteString("SkinTonesCurve=1;0.16667;0.5;0.33333;0.6;0.5;0.5;\n")
+	sb.WriteString("PastSatTog=true\n\n")
 
-	// --- Color Toning (Split Toning) ---
-	hasCT := params.ColorToningShadowR != 0 || params.ColorToningShadowG != 0 || params.ColorToningShadowB != 0 ||
-		params.ColorToningHighlightR != 0 || params.ColorToningHighlightG != 0 || params.ColorToningHighlightB != 0
-	if hasCT {
-		sb.WriteString("\n[ColorToning]\n")
-		sb.WriteString("Enabled=true\n")
-		sb.WriteString("Method=Splitco\n")
-		sb.WriteString(fmt.Sprintf("Redlow=%d\n", clamp(params.ColorToningShadowR, -100, 100)))
-		sb.WriteString(fmt.Sprintf("Greenlow=%d\n", clamp(params.ColorToningShadowG, -100, 100)))
-		sb.WriteString(fmt.Sprintf("Bluelow=%d\n", clamp(params.ColorToningShadowB, -100, 100)))
-		sb.WriteString(fmt.Sprintf("Redhigh=%d\n", clamp(params.ColorToningHighlightR, -100, 100)))
-		sb.WriteString(fmt.Sprintf("Greenhigh=%d\n", clamp(params.ColorToningHighlightG, -100, 100)))
-		sb.WriteString(fmt.Sprintf("Bluehigh=%d\n", clamp(params.ColorToningHighlightB, -100, 100)))
-		sb.WriteString(fmt.Sprintf("Balance=%d\n", clamp(params.ColorToningBalance, 0, 100)))
-		sb.WriteString("Saturation=50\n")
-		sb.WriteString("SatProtectionThreshold=30\n")
-		sb.WriteString("SaturatedOpacity=80\n")
-		sb.WriteString("Strength=50\n")
-	}
-
-	// --- RGB Curves (KEY for color grading/warmth) ---
-	sb.WriteString("\n[RGB Curves]\n")
-	sb.WriteString("Enabled=true\n")
-	sb.WriteString("LumaMode=false\n")
-	if len(params.RCurve) > 0 {
-		sb.WriteString(fmt.Sprintf("rCurve=%s\n", formatCurveValidated(params.RCurve, "rgb_r")))
-	} else {
-		// Default: neutral with very slight warmth
-		sb.WriteString("rCurve=1;0;0;0.5;0.51;1;1;\n")
-	}
-	if len(params.GCurve) > 0 {
-		sb.WriteString(fmt.Sprintf("gCurve=%s\n", formatCurveValidated(params.GCurve, "rgb_g")))
-	} else {
-		// Default: neutral
-		sb.WriteString("gCurve=0;\n")
-	}
-	if len(params.BCurve) > 0 {
-		sb.WriteString(fmt.Sprintf("bCurve=%s\n", formatCurveValidated(params.BCurve, "rgb_b")))
-	} else {
-		// Default: neutral with very slight reduction (subtle warmth)
-		sb.WriteString("bCurve=1;0;0;0.5;0.49;1;1;\n")
-	}
-
-	// --- Sharpening (controlled by AI, with smart defaults) ---
-	sb.WriteString("\n[Sharpening]\n")
-	// Enable sharpening by default for crisp output, unless AI explicitly disabled it
-	// AI may not return sharpen_enabled, so we check if sharpen_amount > 0 as a signal
-	shouldSharpen := params.SharpenEnabled || params.SharpenAmount > 0
-	if !shouldSharpen && params.SharpenAmount == 0 {
-		// AI didn't specify - use sensible defaults
-		shouldSharpen = true
-		params.SharpenAmount = 150
-		params.SharpenRadius = 0.75
-		params.SharpenContrast = 15
-	}
-	if shouldSharpen {
-		sb.WriteString("Enabled=true\n")
-		contrast := params.SharpenContrast
-		if contrast == 0 {
-			contrast = 15
-		}
-		sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(contrast, 0, 100)))
-		sb.WriteString("Method=rld\n") // RL Deconvolution
-		radius := params.SharpenRadius
-		if radius < 0.3 {
-			radius = 0.75
-		}
-		sb.WriteString(fmt.Sprintf("Radius=%.2f\n", radius))
-		amount := params.SharpenAmount
-		if amount == 0 {
-			amount = 150
-		}
-		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(amount, 0, 1000)))
-		sb.WriteString("Threshold=20;80;2000;1200;\n")
-		sb.WriteString("OnlyEdges=false\n")
-		sb.WriteString("EdgedetectionRadius=1.9\n")
-		sb.WriteString("EdgeTolerance=1800\n")
-		sb.WriteString("HalocontrolEnabled=true\n")
-		sb.WriteString("HalocontrolAmount=75\n")
-		sb.WriteString("DeconvRadius=0.75\n")
-		sb.WriteString(fmt.Sprintf("DeconvAmount=%d\n", clamp(amount/2, 50, 200)))
-		sb.WriteString("DeconvAutoRadius=true\n")
-		sb.WriteString("DeconvCornerBoost=0\n")
-		sb.WriteString("DeconvCornerLatitude=25\n")
-	} else {
-		sb.WriteString("Enabled=false\n")
-	}
-
-	// --- Edge Sharpening (controlled by AI, with smart defaults) ---
-	sb.WriteString("\n[SharpenEdge]\n")
-	shouldEdgeSharpen := params.EdgeSharpenEnabled || params.EdgeSharpenAmount > 0
-	if !shouldEdgeSharpen && params.EdgeSharpenAmount == 0 {
-		// AI didn't specify - use sensible defaults
-		shouldEdgeSharpen = true
-		params.EdgeSharpenAmount = 25
-		params.EdgeSharpenPasses = 2
-	}
-	if shouldEdgeSharpen {
-		sb.WriteString("Enabled=true\n")
-		passes := params.EdgeSharpenPasses
-		if passes < 1 {
-			passes = 2
-		}
-		sb.WriteString(fmt.Sprintf("Passes=%d\n", clamp(passes, 1, 4)))
-		amount := params.EdgeSharpenAmount
-		if amount == 0 {
-			amount = 25
-		}
-		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(amount, 0, 100)))
-		sb.WriteString("ThreeChannels=false\n")
-	} else {
-		sb.WriteString("Enabled=false\n")
-	}
-
-	// --- Noise Reduction ---
+	// === NOISE REDUCTION (minimal) ===
+	sb.WriteString("[Denoise]\n")
 	if params.NRLuminance > 0 || params.NRChrominance > 0 {
-		sb.WriteString("\n[Denoise]\n")
 		sb.WriteString("Enabled=true\n")
-		sb.WriteString(fmt.Sprintf("Luminance=%d\n", clamp(params.NRLuminance, 0, 100)))
-		sb.WriteString("LuminanceDetail=50\n")
-		sb.WriteString("LuminanceContrast=0\n")
-		sb.WriteString(fmt.Sprintf("Chrominance=%d\n", clamp(params.NRChrominance, 0, 100)))
+		sb.WriteString(fmt.Sprintf("Luminance=%d\n", clamp(params.NRLuminance, 0, 50)))
+		sb.WriteString(fmt.Sprintf("Chrominance=%d\n", clamp(params.NRChrominance, 0, 50)))
 		sb.WriteString("ChrominanceMethod=Automatic\n")
-		sb.WriteString("ChrominanceAutoFactor=1\n")
+	} else {
+		sb.WriteString("Enabled=false\n")
 	}
+	sb.WriteString("\n")
 
-	// --- Vignette ---
-	if params.VignetteAmount != 0 {
-		sb.WriteString("\n[Vignetting Correction]\n")
-		sb.WriteString("Enabled=true\n")
-		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(params.VignetteAmount, -100, 100)))
-		sb.WriteString("Radius=50\n")
-		sb.WriteString("Strength=1\n")
-		sb.WriteString("CenterX=0\n")
-		sb.WriteString("CenterY=0\n")
-	}
-
-	// --- Lens Profile ---
-	sb.WriteString("\n[LensProfile]\n")
-	sb.WriteString("LcMode=lfauto\n")
-	sb.WriteString("LCPFile=\n")
-	sb.WriteString("UseDistortion=true\n")
-	sb.WriteString("UseVignette=true\n")
-	sb.WriteString("UseCA=true\n")
-
-	// --- RAW Processing ---
-	sb.WriteString("\n[RAW]\n")
-	sb.WriteString("DarkFrame=\n")
-	sb.WriteString("DarkFrameAuto=false\n")
-	sb.WriteString("FlatFieldFile=\n")
-	sb.WriteString("FlatFieldAutoSelect=false\n")
+	// === RAW PROCESSING (use defaults) ===
+	sb.WriteString("[RAW]\n")
 	sb.WriteString("CA=true\n")
 	sb.WriteString("CAAutoIterations=2\n")
-	sb.WriteString("CAAvoidColourshift=true\n")
 	sb.WriteString("HotPixelFilter=true\n")
-	sb.WriteString("DeadPixelFilter=true\n")
-	sb.WriteString("HotDeadPixelThresh=100\n")
+	sb.WriteString("DeadPixelFilter=true\n\n")
 
-	// --- Demosaicing (KEY for sharpness!) ---
-	sb.WriteString("\n[RAW Bayer]\n")
-	sb.WriteString("Method=amaze\n") // AMaZE is sharper than RCD
+	sb.WriteString("[RAW Bayer]\n")
+	sb.WriteString("Method=rcd\n")
 	sb.WriteString("Border=4\n")
 	sb.WriteString("ImageNum=1\n")
-	sb.WriteString("CcSteps=0\n")
-	sb.WriteString("DCBIterations=2\n")
-	sb.WriteString("DCBEnhance=true\n")
-	sb.WriteString("LMMSEIterations=2\n")
+	sb.WriteString("CcSteps=0\n\n")
 
-	// --- Capture Sharpening (demosaic-level sharpening - controlled by AI) ---
-	// --- Capture Sharpening (demosaic-level sharpening - with smart defaults) ---
-	sb.WriteString("\n[PostDemosaicSharpening]\n")
-	shouldCaptureSharp := params.CaptureSharpEnabled || params.CaptureSharpAmount > 0
-	if !shouldCaptureSharp && params.CaptureSharpAmount == 0 {
-		// AI didn't specify - use sensible defaults for crisp output
-		shouldCaptureSharp = true
-		params.CaptureSharpAmount = 100
-		params.CaptureSharpRadius = 0.75
-	}
-	if shouldCaptureSharp {
-		sb.WriteString("Enabled=true\n")
-		sb.WriteString("Contrast=10\n")
-		sb.WriteString("AutoContrast=false\n")
-		sb.WriteString("AutoRadius=true\n")
-		radius := params.CaptureSharpRadius
-		if radius < 0.5 {
-			radius = 0.75
-		}
-		sb.WriteString(fmt.Sprintf("DeconvRadius=%.2f\n", radius))
-		sb.WriteString("DeconvRadiusOffset=0\n")
-		amount := params.CaptureSharpAmount
-		if amount == 0 {
-			amount = 100
-		}
-		sb.WriteString(fmt.Sprintf("DeconvAmount=%d\n", clamp(amount, 0, 200)))
-		sb.WriteString("DeconvIterations=30\n")
-		sb.WriteString("DeconvCornerBoost=0.35\n")
-		sb.WriteString("DeconvCornerLatitude=40\n")
-	} else {
-		sb.WriteString("Enabled=false\n")
-	}
+	// === DISABLE ALL SHARPENING (causes artifacts) ===
+	sb.WriteString("[Sharpening]\n")
+	sb.WriteString("Enabled=false\n\n")
 
-	// --- Color Management ---
-	sb.WriteString("\n[Color Management]\n")
+	sb.WriteString("[SharpenEdge]\n")
+	sb.WriteString("Enabled=false\n\n")
+
+	sb.WriteString("[SharpenMicro]\n")
+	sb.WriteString("Enabled=false\n\n")
+
+	sb.WriteString("[PostDemosaicSharpening]\n")
+	sb.WriteString("Enabled=false\n\n")
+
+	sb.WriteString("[Dehaze]\n")
+	sb.WriteString("Enabled=false\n\n")
+
+	// === COLOR MANAGEMENT ===
+	sb.WriteString("[Color Management]\n")
 	sb.WriteString("InputProfile=(cameraICC)\n")
 	sb.WriteString("ToneCurve=false\n")
 	sb.WriteString("ApplyLookTable=true\n")
 	sb.WriteString("ApplyBaselineExposureOffset=true\n")
 	sb.WriteString("ApplyHueSatMap=true\n")
-	sb.WriteString("DCPIlluminant=0\n")
 	sb.WriteString("WorkingProfile=ProPhoto\n")
 	sb.WriteString("OutputProfile=RTv4_sRGB\n")
 	sb.WriteString("OutputProfileIntent=Relative\n")
-	sb.WriteString("OutputBPC=true\n")
+	sb.WriteString("OutputBPC=true\n\n")
 
-	// --- Resize (for output quality) ---
-	sb.WriteString("\n[Resize]\n")
+	// === RESIZE ===
+	sb.WriteString("[Resize]\n")
 	sb.WriteString("Enabled=false\n")
-	sb.WriteString("AppliesTo=Cropped area\n")
-	sb.WriteString("Method=Lanczos\n")
 
 	return []byte(sb.String())
 }
