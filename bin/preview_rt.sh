@@ -34,9 +34,9 @@ else
 fi
 
 echo "📸 Rendering with RawTherapee CLI..."
-# Construct output filename: [filename]_[style]_rt.jpg
-# Note: RT CLI expects the output path relative to CWD or absolute
-OUTPUT="${IMAGE}_${STYLE}_rt.jpg"
+# Construct output filename: [path/to/filename]_[style]_rt.jpg
+BASE_NAME="${IMAGE%.*}"
+OUTPUT="${BASE_NAME}_${STYLE}_rt.jpg"
 
 # -j100 = JPEG quality 100%, -Y = overwrite, -s = use sidecar pp3
 "$RT_CLI" -o "$OUTPUT" -j100 -s -Y -c "$IMAGE"

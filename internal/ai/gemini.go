@@ -231,74 +231,76 @@ Output ONLY the JSON object.`, systemInstruction, metadataInfo, styleInstruction
 // pp3Styles contains RawTherapee-specific style instructions with RT parameter guidance
 var pp3Styles = map[string]string{
 	"natural": `Natural look: accurate colors, balanced exposure.
-compensation=0.45, contrast=12, lab_contrast=18, lab_chromaticity=20`,
+compensation=0.45, contrast=10, lab_contrast=15, lab_chromaticity=15, nr_luminance=10, nr_chrominance=15`,
 
 	"vivid": `Vibrant colors, punchy contrast.
-compensation=0.48, contrast=18, lab_contrast=25, lab_chromaticity=30, vib_pastels=30`,
+compensation=0.48, contrast=15, lab_contrast=20, lab_chromaticity=25, vib_pastels=20, nr_luminance=10`,
 
-	"film": `Film look: warm tones, lifted blacks.
-compensation=0.50, contrast=10, lab_chromaticity=22, temperature=5800`,
+	"film": `Film look: warm tones, lifted blacks, soft roll-off.
+compensation=0.50, contrast=12, lab_chromaticity=20, temperature=5800, tint=1.02, nr_luminance=5`,
 
-	"kodak": `Kodak Portra: warm, creamy skin tones.
-compensation=0.48, contrast=12, lab_chromaticity=20, temperature=5700, tint=0.98`,
+	"kodak": `Kodak Portra style: warm, creamy skin tones, slight overexposure look.
+compensation=0.52, contrast=10, lab_chromaticity=18, temperature=5600, tint=0.98, vib_pastels=15`,
 
-	"fuji": `Fujifilm: COOL tones, hard contrast, punchy.
-compensation=0.42, contrast=20, lab_contrast=25, lab_chromaticity=25, temperature=4900, tint=0.97`,
+	"fuji": `Fujifilm style: cool shadows, high contrast, punchy greens.
+compensation=0.45, contrast=18, lab_contrast=22, lab_chromaticity=20, temperature=5200, tint=0.96`,
 
-	"cinematic": `Movie look: moody, controlled contrast.
-compensation=0.42, contrast=15, lab_contrast=20, lab_chromaticity=18`,
+	"cinematic": `Movie look: teal/orange vibe, controlled contrast, moody.
+compensation=0.42, contrast=15, lab_contrast=18, lab_chromaticity=15, vib_pastels=10`,
 
-	"landscape": `Landscape: enhanced sky and foliage.
-compensation=0.40, contrast=18, lab_contrast=22, lab_chromaticity=28, vib_pastels=25`,
+	"landscape": `Landscape: clear sky, enhanced foliage, detailed.
+compensation=0.40, contrast=15, lab_contrast=20, lab_chromaticity=25, vib_pastels=20, nr_luminance=10`,
 
-	"portrait": `Portrait: flattering skin tones, soft.
-compensation=0.48, contrast=10, lab_contrast=15, lab_chromaticity=18, vib_pastels=15`,
+	"portrait": `Portrait: flattering skin tones, soft contrast, reduced texture.
+compensation=0.48, contrast=8, lab_contrast=10, lab_chromaticity=15, vib_pastels=10, nr_luminance=20, nr_chrominance=20`,
 
-	"bw": `Black and white.
-compensation=0.45, contrast=20, saturation=-100, lab_contrast=25`,
+	"bw": `Black and white: strong contrast, rich tonal range.
+compensation=0.45, contrast=20, saturation=-100, lab_contrast=25, nr_luminance=15`,
 
-	"matte": `Matte/faded look.
-compensation=0.52, contrast=8, lab_contrast=12, lab_chromaticity=15`,
+	"matte": `Matte/faded look: lifted blacks, low contrast, desaturated.
+compensation=0.52, contrast=5, lab_contrast=10, lab_chromaticity=10, black=0`,
 }
 
-const pp3SystemInstruction = `You are a RawTherapee color grading expert. Generate SIMPLE PP3 parameters.
+const pp3SystemInstruction = `You are a RawTherapee color grading expert. Generate high-quality PP3 parameters.
 
-⚠️ IMPORTANT:
-- compensation MUST be 0.35-0.55 (RT renders dark, this controls brightness)
-- Keep parameters conservative to avoid artifacts
+⚠️ CRITICAL QUALITY RULES:
+- **Noise Reduction**: ALWAYS apply 'nr_luminance' (10-25) and 'nr_chrominance' (15-30) unless ISO is very low. Grainy images look bad.
+- **Exposure**: 'compensation' MUST be 0.35-0.55. RT renders dark by default.
+- **Saturation**: Be conservative. Use 'vib_pastels' for natural color boosts instead of 'saturation'.
+- **Contrast**: Avoid high 'contrast' (>20) or 'lab_contrast' (>30) to prevent harsh artifacts.
 
-📊 ONLY THESE PARAMETERS (all others will be ignored):
+📊 ALLOWED PARAMETERS:
 - compensation: 0.35-0.55 (brightness, REQUIRED)
-- contrast: 5-25 (image contrast)
-- saturation: 0-15 (color saturation)
-- black: 0-150 (black point)
-- highlight_compr: 0-150 (highlight compression)
-- temperature: 4500-7000 (white balance kelvin, 5500=daylight)
-- tint: 0.92-1.08 (green-magenta, 1.0=neutral)
-- lab_brightness: 0-15 (luminance)
-- lab_contrast: 10-30 (local contrast)
-- lab_chromaticity: 10-35 (color vibrancy)
-- vib_pastels: 10-40 (boost muted colors)
-- vib_saturated: 5-20 (protect saturated colors)
-- nr_luminance: 0-30 (noise reduction based on ISO)
-- nr_chrominance: 0-30 (color noise reduction)
+- contrast: 5-25 (global contrast)
+- saturation: -100 to 20 (color saturation, -100 for B&W)
+- black: 0-150 (black point, higher = darker blacks)
+- highlight_compr: 0-100 (recover highlights)
+- temperature: 4000-7500 (white balance)
+- tint: 0.90-1.10 (green-magenta balance)
+- lab_brightness: -10 to 10 (luminance adjust)
+- lab_contrast: 0-30 (local contrast/clarity)
+- lab_chromaticity: 0-30 (color vibrancy)
+- vib_pastels: 0-30 (boost muted colors)
+- vib_saturated: 0-15 (protect saturated colors)
+- nr_luminance: 5-40 (reduce grain/noise)
+- nr_chrominance: 10-40 (remove color noise)
 
-Output ONLY this JSON:
+Output ONLY this JSON format:
 {
   "compensation": 0.45,
-  "contrast": 15,
-  "saturation": 8,
-  "black": 80,
-  "highlight_compr": 60,
+  "contrast": 12,
+  "saturation": 5,
+  "black": 50,
+  "highlight_compr": 40,
   "temperature": 5500,
   "tint": 1.0,
   "lab_brightness": 5,
-  "lab_contrast": 18,
-  "lab_chromaticity": 22,
-  "vib_pastels": 20,
-  "vib_saturated": 10,
-  "nr_luminance": 8,
-  "nr_chrominance": 12
+  "lab_contrast": 15,
+  "lab_chromaticity": 20,
+  "vib_pastels": 15,
+  "vib_saturated": 5,
+  "nr_luminance": 15,
+  "nr_chrominance": 20
 }`
 
 func (g *GeminiClient) AnalyzeImageForPP3(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.PP3Params, error) {

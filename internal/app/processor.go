@@ -171,9 +171,9 @@ func (p *Processor) generateXMP(ctx context.Context, rawPath string, params *mod
 func (p *Processor) generatePP3(rawPath string, params *models.GradingParams, result *models.ProcessingResult) error {
 	pp3Data := rt.GeneratePP3(*params)
 
-	// RawTherapee expects [filename].[extension].pp3 or [filename].pp3
-	// Standard is [filename].[extension].pp3 (e.g., photo.ARW.pp3)
-	pp3Path := rawPath + ".pp3"
+	// RawTherapee sidecar path: [filename].pp3
+	ext := filepath.Ext(rawPath)
+	pp3Path := strings.TrimSuffix(rawPath, ext) + ".pp3"
 
 	if err := os.WriteFile(pp3Path, pp3Data, 0644); err != nil {
 		return fmt.Errorf("failed to write pp3 file: %w", err)
@@ -203,7 +203,8 @@ func (p *Processor) generatePP3Native(ctx context.Context, rawPath string, previ
 	// Generate PP3 file using native params
 	pp3Data := rt.GeneratePP3FromNative(pp3Params)
 
-	pp3Path := rawPath + ".pp3"
+	ext := filepath.Ext(rawPath)
+	pp3Path := strings.TrimSuffix(rawPath, ext) + ".pp3"
 	if err := os.WriteFile(pp3Path, pp3Data, 0644); err != nil {
 		return fmt.Errorf("failed to write pp3 file: %w", err)
 	}
