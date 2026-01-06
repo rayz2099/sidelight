@@ -82,7 +82,7 @@ sudo mv bin/sidelight /usr/local/bin/
 
 ```bash
 # 临时生效
-export GEMINI_API_KEY="your_api_key_here"
+export SL_GEMINI_API_KEY="your_api_key_here"
 
 # 或写入配置文件 (推荐)
 mkdir -p ~/.config/sidelight

@@ -19,6 +19,7 @@ type GeminiClient struct {
 
 func NewGeminiClient(ctx context.Context, apiKey, endpoint string, modelName string) (*GeminiClient, error) {
 	opts := []option.ClientOption{option.WithAPIKey(apiKey)}
+	//fmt.Println("apikey:", apiKey)
 	if endpoint != "" {
 		opts = append(opts, option.WithEndpoint(endpoint))
 	}
