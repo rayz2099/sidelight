@@ -10,14 +10,14 @@ import (
 
 var cfgFile string
 
-func main() {
-	var rootCmd = &cobra.Command{
-		Use:   "sidelight",
-		Short: "SideLight is an AI-powered color grading tool for photos",
-		Long: `SideLight uses Gemini AI to analyze your photos and generate professional color grading.
+var rootCmd = &cobra.Command{
+	Use:   "sidelight",
+	Short: "SideLight is an AI-powered color grading tool for photos",
+	Long: `SideLight uses Gemini AI to analyze your photos and generate professional color grading.
 It supports RAW files (ARW, NEF, CR3, etc.) and standard formats (JPG, PNG).`,
-	}
+}
 
+func main() {
 	cobra.OnInitialize(initConfig)
 
 	// 支持 -c 和 --config 两种方式指定配置文件

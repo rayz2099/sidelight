@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SideLight Web</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f0f11;
+            --surface-dark: #1c1c1e;
+            --primary: #0a84ff;
+            --primary-hover: #0077ed;
+            --text-main: #f5f5f7;
+            --text-secondary: #86868b;
+            --border: #38383a;
+            --accent-gradient: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
+        }
+
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 40px 20px; 
+            background: var(--bg-dark); 
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        h1 { 
+            text-align: center; 
+            margin-bottom: 60px; 
+            font-weight: 800;
+            font-size: 3.5rem;
+            letter-spacing: -0.02em;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container { 
+            display: grid; 
+            grid-template-columns: 350px 1fr; 
+            gap: 30px; 
+            align-items: start;
+        }
+
+        .controls { 
+            background: var(--surface-dark); 
+            padding: 30px; 
+            border-radius: 20px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
+            position: sticky;
+            top: 40px;
+        }
+
+        .preview-card { 
+            background: var(--surface-dark); 
+            padding: 10px; 
+            border-radius: 20px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
+            min-height: 600px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at center, #2c2c2e 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        
+        .form-group { margin-bottom: 24px; }
+        
+        label { 
+            display: block; 
+            margin-bottom: 10px; 
+            font-weight: 600; 
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        select, textarea { 
+            width: 100%; 
+            padding: 14px; 
+            background: #2c2c2e; 
+            border: 1px solid transparent; 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 15px; 
+            transition: all 0.2s;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #3a3a3c;
+        }
+
+        textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+        
+        .file-drop { 
+            border: 2px dashed var(--border); 
+            padding: 40px 20px; 
+            text-align: center; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            background: rgba(255,255,255,0.02);
+        }
+
+        .file-drop:hover { 
+            border-color: var(--primary); 
+            background: rgba(10, 132, 255, 0.05); 
+        }
+
+        .file-drop.has-file { 
+            border-style: solid; 
+            border-color: var(--primary); 
+            background: rgba(10, 132, 255, 0.1); 
+        }
+
+        .file-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        button { 
+            background: var(--accent-gradient); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            border-radius: 14px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            width: 100%; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+        }
+
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(10, 132, 255, 0.4);
+        }
+
+        button:active { transform: translateY(0); }
+        
+        button:disabled { 
+            background: #3a3a3c; 
+            color: #666; 
+            transform: none; 
+            box-shadow: none;
+            cursor: not-allowed; 
+        }
+        
+        img { 
+            max-width: 100%; 
+            max-height: 800px; 
+            border-radius: 12px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .loading { 
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-secondary); 
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error { 
+            color: #ff453a; 
+            margin-top: 15px; 
+            font-size: 14px; 
+            text-align: center;
+            background: rgba(255, 69, 58, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        /* Select styling hack */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 0.65em auto;
+        }
+
+        @media (max-width: 800px) {
+            .container { grid-template-columns: 1fr; }
+            h1 { font-size: 2.5rem; }
+            .controls { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <h1>SideLight Web</h1>
+    
+    <div class="container">
+        <div class="controls">
+            <div class="form-group">
+                <label>Image (RAW/JPG)</label>
+                <div class="file-drop" id="dropZone">
+                    <span class="file-icon">📁</span>
+                    <p id="fileName" style="margin: 0">Click or Drag & Drop File</p>
+                    <input type="file" id="fileInput" accept=".ARW,.CR2,.CR3,.NEF,.DNG,.JPG,.JPEG,.PNG" style="display: none">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Style Preset</label>
+                <select id="styleSelect">
+                    <option value="natural">🌿 Natural</option>
+                    <option value="film">🎞️ Analog Film</option>
+                    <option value="kodak">☀️ Kodak Portra</option>
+                    <option value="fuji">🗻 Fujifilm</option>
+                    <option value="cinematic">🎬 Cinematic</option>
+                    <option value="vivid">🌈 Vivid</option>
+                    <option value="bw">⚫ Black & White</option>
+                    <option value="matte">🌫️ Matte</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Custom Prompt (Optional)</label>
+                <textarea id="promptInput" placeholder="Describe the look you want... (e.g., 'Warm sunset vibes, high contrast, dreamy glow')"></textarea>
+            </div>
+            
+            <button id="generateBtn">✨ Generate Preview</button>
+            <div id="errorMsg" class="error"></div>
+        </div>
+        
+        <div class="preview-card" id="previewContainer">
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <span>Processing with AI...</span>
+            </div>
+            <img id="resultImage" style="display: none">
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const generateBtn = document.getElementById('generateBtn');
+        const resultImage = document.getElementById('resultImage');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorMsg = document.getElementById('errorMsg');
+        
+        let selectedFile = null;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--primary)';
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border)';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border)';
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            fileName.textContent = file.name;
+            dropZone.classList.add('has-file');
+            resultImage.style.display = 'none';
+            errorMsg.style.display = 'none';
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                showError("Please select a file first.");
+                return;
+            }
+            
+            loadingSpinner.style.display = 'flex';
+            resultImage.style.display = 'none';
+            generateBtn.disabled = true;
+            errorMsg.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('style', document.getElementById('styleSelect').value);
+            formData.append('prompt', document.getElementById('promptInput').value);
+
+            try {
+                const response = await fetch('/api/grade', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const txt = await response.text();
+                    throw new Error(txt || 'Server error');
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                resultImage.src = url;
+                resultImage.style.display = 'block';
+            } catch (err) {
+                showError("Error: " + err.message);
+            } finally {
+                loadingSpinner.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+        });
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
