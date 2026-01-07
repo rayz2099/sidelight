@@ -3,264 +3,501 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SideLight Web</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>SideLight AI Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0f0f11;
-            --surface-dark: #1c1c1e;
-            --primary: #0a84ff;
-            --primary-hover: #0077ed;
-            --text-main: #f5f5f7;
-            --text-secondary: #86868b;
-            --border: #38383a;
-            --accent-gradient: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
+            --bg-dark: #050505;
+            --surface: rgba(255, 255, 255, 0.05);
+            --surface-hover: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --accent: #a855f7;
+            --gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --border: rgba(255, 255, 255, 0.1);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 40px 20px; 
-            background: var(--bg-dark); 
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.15) 0%, transparent 25%);
             color: var(--text-main);
+            margin: 0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        h1 { 
-            text-align: center; 
-            margin-bottom: 60px; 
-            font-weight: 800;
-            font-size: 3.5rem;
-            letter-spacing: -0.02em;
-            background: var(--accent-gradient);
+        .navbar {
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            border-bottom: var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
         }
 
-        .container { 
-            display: grid; 
-            grid-template-columns: 350px 1fr; 
-            gap: 30px; 
-            align-items: start;
-        }
-
-        .controls { 
-            background: var(--surface-dark); 
-            padding: 30px; 
-            border-radius: 20px; 
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
-            position: sticky;
-            top: 40px;
-        }
-
-        .preview-card { 
-            background: var(--surface-dark); 
-            padding: 10px; 
-            border-radius: 20px; 
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
-            min-height: 600px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            background-image: 
-                radial-gradient(circle at center, #2c2c2e 1px, transparent 1px);
-            background-size: 24px 24px;
-        }
-        
-        .form-group { margin-bottom: 24px; }
-        
-        label { 
-            display: block; 
-            margin-bottom: 10px; 
-            font-weight: 600; 
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        select, textarea { 
-            width: 100%; 
-            padding: 14px; 
-            background: #2c2c2e; 
-            border: 1px solid transparent; 
-            border-radius: 12px; 
-            color: white; 
-            font-size: 15px; 
-            transition: all 0.2s;
-            font-family: inherit;
+        .main-container {
+            width: 100%;
+            max-width: 1400px;
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 40px;
             box-sizing: border-box;
         }
 
-        select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: #3a3a3c;
+        /* Sidebar Controls */
+        .controls-panel {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            border: var(--glass-border);
+            padding: 30px;
+            height: fit-content;
+            box-shadow: var(--glass-shadow);
         }
 
-        textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
-        
-        .file-drop { 
-            border: 2px dashed var(--border); 
-            padding: 40px 20px; 
-            text-align: center; 
-            border-radius: 16px; 
-            cursor: pointer; 
-            transition: all 0.3s; 
+        .panel-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        /* Custom File Input */
+        .file-drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
             background: rgba(255,255,255,0.02);
         }
 
-        .file-drop:hover { 
-            border-color: var(--primary); 
-            background: rgba(10, 132, 255, 0.05); 
+        .file-drop-zone:hover, .file-drop-zone.drag-over {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateY(-2px);
         }
 
-        .file-drop.has-file { 
-            border-style: solid; 
-            border-color: var(--primary); 
-            background: rgba(10, 132, 255, 0.1); 
-        }
-
-        .file-icon {
+        .drop-icon {
             font-size: 24px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: block;
         }
-        
-        button { 
-            background: var(--accent-gradient); 
-            color: white; 
-            border: none; 
-            padding: 16px; 
-            border-radius: 14px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            width: 100%; 
-            transition: transform 0.2s, box-shadow 0.2s; 
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+
+        .drop-text {
+            color: var(--text-muted);
+            font-size: 0.85rem;
         }
 
-        button:hover { 
+        .file-name-display {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        /* Custom Select */
+        .custom-select-wrapper {
+            position: relative;
+        }
+
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 0.95rem;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        select:hover {
+            background: var(--surface-hover);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--text-muted);
+        }
+
+        /* Textarea */
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 100px;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--surface-hover);
+        }
+
+        textarea::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+        /* Generate Button */
+        .btn-generate {
+            width: 100%;
+            padding: 16px;
+            background: var(--gradient);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-generate::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-generate:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(10, 132, 255, 0.4);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
         }
 
-        button:active { transform: translateY(0); }
-        
-        button:disabled { 
-            background: #3a3a3c; 
-            color: #666; 
-            transform: none; 
-            box-shadow: none;
+        .btn-generate:hover::before {
+            left: 100%;
+        }
+
+        .btn-generate:disabled {
+            background: var(--surface);
+            color: var(--text-muted);
             cursor: not-allowed; 
-        }
-        
-        img { 
-            max-width: 100%; 
-            max-height: 800px; 
-            border-radius: 12px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transform: none;
+            box-shadow: none;
         }
 
-        .loading { 
-            display: none; 
+        /* Preview Area */
+        .preview-panel {
+            background: rgba(10, 10, 10, 0.5);
+            border-radius: 24px;
+            border: var(--glass-border);
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .image-container {
+            flex: 1;
+            display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            padding: 30px;
+            background-image: 
+                linear-gradient(45deg, #111 25%, transparent 25%), 
+                linear-gradient(-45deg, #111 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #111 75%), 
+                linear-gradient(-45deg, transparent 75%, #111 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            position: relative;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 85vh; /* Increased for larger preview */
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            transition: opacity 0.5s ease;
+        }
+
+        .preview-toolbar {
+            width: 100%;
+            padding: 10px 20px; /* Reduced padding */
+            background: rgba(255, 255, 255, 0.03);
+            border-top: var(--glass-border);
+            display: flex;
+            justify-content: center; /* Center the toolbar content */
+            align-items: center;
             gap: 15px;
-            color: var(--text-secondary); 
+            display: none; 
+        }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px; /* Smaller button */
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px; /* Pill shape */
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-download:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* Loading State */
+        .loader-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border: 3px solid rgba(255,255,255,0.1);
             border-radius: 50%;
-            border-top-color: var(--primary);
+            border-top-color: var(--accent);
             animation: spin 1s ease-in-out infinite;
+            margin-bottom: 16px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Parameters Panel */
+        .params-panel {
+            background: #0f0f11;
+            border-top: var(--glass-border);
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .error { 
-            color: #ff453a; 
-            margin-top: 15px; 
-            font-size: 14px; 
-            text-align: center;
-            background: rgba(255, 69, 58, 0.1);
-            padding: 10px;
-            border-radius: 8px;
-            display: none;
+        .params-panel.visible {
+            max-height: 300px;
+            overflow-y: auto;
         }
 
-        /* Select styling hack */
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 0.65em auto;
+        .params-header {
+            padding: 15px 25px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
         }
 
-        @media (max-width: 800px) {
-            .container { grid-template-columns: 1fr; }
-            h1 { font-size: 2.5rem; }
-            .controls { position: static; }
+        .json-content {
+            padding: 20px 25px;
+            margin: 0;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #d4d4d8;
+        }
+
+        .key { color: #93c5fd; }
+        .string { color: #86efac; }
+        .number { color: #fca5a5; }
+        .boolean { color: #fcd34d; }
+
+        .error-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+        }
+
+        .error-toast.visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 900px) {
+            .main-container { grid-template-columns: 1fr; padding: 20px; }
+            .navbar { padding: 15px; }
+            .preview-panel { min-height: 400px; }
         }
     </style>
 </head>
 <body>
-    <h1>SideLight Web</h1>
-    
-    <div class="container">
-        <div class="controls">
-            <div class="form-group">
-                <label>Image (RAW/JPG)</label>
-                <div class="file-drop" id="dropZone">
-                    <span class="file-icon">📁</span>
-                    <p id="fileName" style="margin: 0">Click or Drag & Drop File</p>
+    <nav class="navbar">
+        <div class="logo">SideLight AI</div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="controls-panel">
+            <div class="panel-title">Configuration</div>
+            
+            <div class="control-group">
+                <label>Source Image</label>
+                <div class="file-drop-zone" id="dropZone">
+                    <span class="drop-icon">📂</span>
+                    <span class="drop-text">Drag RAW/JPG here</span>
+                    <div id="fileName" class="file-name-display"></div>
                     <input type="file" id="fileInput" accept=".ARW,.CR2,.CR3,.NEF,.DNG,.JPG,.JPEG,.PNG" style="display: none">
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label>Style Preset</label>
-                <select id="styleSelect">
-                    <option value="natural">🌿 Natural</option>
-                    <option value="film">🎞️ Analog Film</option>
-                    <option value="kodak">☀️ Kodak Portra</option>
-                    <option value="fuji">🗻 Fujifilm</option>
-                    <option value="cinematic">🎬 Cinematic</option>
-                    <option value="vivid">🌈 Vivid</option>
-                    <option value="bw">⚫ Black & White</option>
-                    <option value="matte">🌫️ Matte</option>
-                </select>
+
+            <div class="control-group">
+                <label>Grading Style</label>
+                <div class="custom-select-wrapper">
+                    <select id="styleSelect">
+                        <option value="natural">🌿 Natural & Balanced</option>
+                        <option value="film">🎞️ Analog Film</option>
+                        <option value="kodak">☀️ Kodak Portra</option>
+                        <option value="fuji">🗻 Fujifilm Simulation</option>
+                        <option value="cinematic">🎬 Cinematic Teal/Orange</option>
+                        <option value="vivid">🌈 Vivid & Punchy</option>
+                        <option value="bw">⚫ Black & White Noir</option>
+                        <option value="matte">🌫️ Matte / Faded</option>
+                    </select>
+                    <span class="select-arrow">▼</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>AI Prompt</label>
+                <textarea id="promptInput" placeholder="Describe your vision... e.g. 'Golden hour warmth, soft highlights, dreamy atmosphere'"></textarea>
+            </div>
+
+            <button id="generateBtn" class="btn-generate">
+                ✨ Generate Grading
+            </button>
+        </aside>
+
+        <main class="preview-panel">
+            <div class="image-container">
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">🖼️</div>
+                    <div>Upload an image to start grading</div>
+                </div>
+                <img id="resultImage" class="preview-img" style="display: none">
             </div>
             
-            <div class="form-group">
-                <label>Custom Prompt (Optional)</label>
-                <textarea id="promptInput" placeholder="Describe the look you want... (e.g., 'Warm sunset vibes, high contrast, dreamy glow')"></textarea>
+            <!-- Toolbar for actions -->
+            <div id="previewToolbar" class="preview-toolbar">
+                <a id="downloadLink" href="#" class="btn-download">
+                    <span>⬇️</span> Download High-Res (JPG)
+                </a>
             </div>
             
-            <button id="generateBtn">✨ Generate Preview</button>
-            <div id="errorMsg" class="error"></div>
-        </div>
-        
-        <div class="preview-card" id="previewContainer">
-            <div class="loading" id="loadingSpinner">
+            <div class="loader-overlay" id="loadingSpinner">
                 <div class="spinner"></div>
-                <span>Processing with AI...</span>
+                <div style="font-weight: 500; letter-spacing: 0.5px;">Analyzing & Rendering...</div>
             </div>
-            <img id="resultImage" style="display: none">
-        </div>
+
+            <div class="params-panel" id="paramsContainer">
+                <div class="params-header">
+                    <span>Generated PP3 Parameters</span>
+                    <span style="font-size: 0.7rem; opacity: 0.7;">JSON</span>
+                </div>
+                <pre id="paramsCode" class="json-content"></pre>
+            </div>
+        </main>
     </div>
+
+    <div id="errorToast" class="error-toast"></div>
 
     <script>
         const dropZone = document.getElementById('dropZone');
@@ -268,25 +505,38 @@
         const fileName = document.getElementById('fileName');
         const generateBtn = document.getElementById('generateBtn');
         const resultImage = document.getElementById('resultImage');
+        const downloadLink = document.getElementById('downloadLink');
+        const previewToolbar = document.getElementById('previewToolbar');
+        const emptyState = document.getElementById('emptyState');
         const loadingSpinner = document.getElementById('loadingSpinner');
-        const errorMsg = document.getElementById('errorMsg');
+        const paramsContainer = document.getElementById('paramsContainer');
+        const paramsCode = document.getElementById('paramsCode');
+        const errorToast = document.getElementById('errorToast');
         
         let selectedFile = null;
 
+        // File Handling
         dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = 'var(--primary)';
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
         });
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = 'var(--border)';
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
         });
+
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.style.borderColor = 'var(--border)';
             if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
         });
+        
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length) handleFile(e.target.files[0]);
         });
@@ -294,21 +544,24 @@
         function handleFile(file) {
             selectedFile = file;
             fileName.textContent = file.name;
-            dropZone.classList.add('has-file');
             resultImage.style.display = 'none';
-            errorMsg.style.display = 'none';
+            previewToolbar.style.display = 'none';
+            emptyState.style.display = 'block';
+            paramsContainer.classList.remove('visible');
+            hideError();
         }
 
+        // Generate Action
         generateBtn.addEventListener('click', async () => {
             if (!selectedFile) {
-                showError("Please select a file first.");
+                showError("Please select an image file first");
                 return;
             }
             
-            loadingSpinner.style.display = 'flex';
+            setLoading(true);
+            hideError();
             resultImage.style.display = 'none';
-            generateBtn.disabled = true;
-            errorMsg.style.display = 'none';
+            previewToolbar.style.display = 'none';
 
             const formData = new FormData();
             formData.append('image', selectedFile);
@@ -326,21 +579,73 @@
                     throw new Error(txt || 'Server error');
                 }
 
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                resultImage.src = url;
-                resultImage.style.display = 'block';
+                const data = await response.json();
+                
+                // Display Image
+                const imageSrc = data.image_url;
+                resultImage.src = imageSrc;
+                
+                // Configure Download Link
+                downloadLink.href = imageSrc;
+                downloadLink.download = "sidelight_graded_" + selectedFile.name.split('.')[0] + ".jpg";
+                
+                resultImage.onload = () => {
+                    resultImage.style.display = 'block';
+                    previewToolbar.style.display = 'flex';
+                    resultImage.style.opacity = 0;
+                    setTimeout(() => resultImage.style.opacity = 1, 50);
+                };
+                emptyState.style.display = 'none';
+
+                // Display Params
+                if (data.params) {
+                    paramsCode.innerHTML = syntaxHighlight(data.params);
+                    paramsContainer.classList.add('visible');
+                }
+
             } catch (err) {
-                showError("Error: " + err.message);
+                showError(err.message.replace('Error: ', ''));
             } finally {
-                loadingSpinner.style.display = 'none';
-                generateBtn.disabled = false;
+                setLoading(false);
             }
         });
 
+        function setLoading(isLoading) {
+            loadingSpinner.style.display = isLoading ? 'flex' : 'none';
+            generateBtn.disabled = isLoading;
+            generateBtn.innerHTML = isLoading ? 'Processing...' : '✨ Generate Grading';
+        }
+
         function showError(msg) {
-            errorMsg.textContent = msg;
-            errorMsg.style.display = 'block';
+            errorToast.textContent = msg;
+            errorToast.classList.add('visible');
+            setTimeout(hideError, 4000);
+        }
+
+        function hideError() {
+            errorToast.classList.remove('visible');
+        }
+
+        function syntaxHighlight(json) {
+            if (typeof json != 'string') {
+                 json = JSON.stringify(json, undefined, 2);
+            }
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                var cls = 'number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'key';
+                    } else {
+                        cls = 'string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
         }
     </script>
 </body>
