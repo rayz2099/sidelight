@@ -301,8 +301,8 @@ func sanitizeParams(params *models.PP3Params) {
 	params.ColorToningHighlightB = clamp(params.ColorToningHighlightB, -maxCT, maxCT)
 
 	// === SATURATION ===
-	if params.Saturation < -10 {
-		params.Saturation = -10
+	if params.Saturation < -100 {
+		params.Saturation = -100
 	}
 	if params.Saturation > 25 {
 		params.Saturation = 25
@@ -345,7 +345,7 @@ func sanitizeParams(params *models.PP3Params) {
 
 // GeneratePP3FromNative creates a RawTherapee PP3 file from native PP3 parameters
 // SIMPLIFIED version - only essential parameters to avoid artifacts
-func GeneratePP3FromNative(params *models.PP3Params) []byte {
+func GeneratePP3FromNative(params *models.PP3Params, isRaw bool) []byte {
 	// Sanitize parameters first
 	sanitizeParams(params)
 
@@ -369,30 +369,40 @@ func GeneratePP3FromNative(params *models.PP3Params) []byte {
 	sb.WriteString(fmt.Sprintf("Saturation=%d\n", clamp(params.Saturation, -50, 50)))
 	sb.WriteString(fmt.Sprintf("Black=%d\n", clamp(params.Black, 0, 300)))
 	sb.WriteString(fmt.Sprintf("HighlightCompr=%d\n", clamp(params.HighlightCompr, 0, 200)))
-	sb.WriteString("HighlightComprThreshold=0\n\n")
+	sb.WriteString("HighlightComprThreshold=0\n")
+	// Use Blend method for natural highlight rolloff (similar to LR)
+	sb.WriteString("HighlightReconstruction=true\n")
+	sb.WriteString("HighlightReconstructionMethod=blend\n\n")
 
 	// === TONE CURVE (simple) ===
 	sb.WriteString("[ToneCurve]\n")
 	sb.WriteString("Enabled=true\n")
-	// Use linear curve by default - let Exposure handle brightness
+	// Use Film-Like / Perceptual curve mode for smoother transitions
+	sb.WriteString("CurveMode=FilmLike\n") 
 	sb.WriteString("Curve=0;\n")
 	sb.WriteString("Curve2=0;\n\n")
 
 	// === WHITE BALANCE ===
 	sb.WriteString("[White Balance]\n")
-	sb.WriteString("Enabled=true\n")
-	sb.WriteString("Setting=Custom\n")
-	temp := params.Temperature
-	if temp < 3500 || temp > 9000 {
-		temp = 5500
+	if isRaw {
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString("Setting=Custom\n")
+		temp := params.Temperature
+		if temp < 3500 || temp > 9000 {
+			temp = 5500
+		}
+		sb.WriteString(fmt.Sprintf("Temperature=%d\n", temp))
+		tint := params.Tint
+		if tint < 0.7 || tint > 1.5 {
+			tint = 1.0
+		}
+		sb.WriteString(fmt.Sprintf("Green=%.3f\n", tint))
+		sb.WriteString("Equal=1\n\n")
+	} else {
+		// For JPEG, applying RAW WB values causes severe color casts (especially blue).
+		// Disable WB module to preserve original colors, or use "Camera" if enabled.
+		sb.WriteString("Enabled=false\n\n")
 	}
-	sb.WriteString(fmt.Sprintf("Temperature=%d\n", temp))
-	tint := params.Tint
-	if tint < 0.7 || tint > 1.5 {
-		tint = 1.0
-	}
-	sb.WriteString(fmt.Sprintf("Green=%.3f\n", tint))
-	sb.WriteString("Equal=1\n\n")
 
 	// === LAB ADJUSTMENTS (for color/contrast) ===
 	sb.WriteString("[Luminance Curve]\n")
@@ -412,30 +422,53 @@ func GeneratePP3FromNative(params *models.PP3Params) []byte {
 	sb.WriteString("AvoidColorShift=true\n")
 	sb.WriteString("PastSatTog=true\n\n")
 
-	// === NOISE REDUCTION (minimal) ===
+	// === NOISE REDUCTION ===
 	sb.WriteString("[Denoise]\n")
-	if params.NRLuminance > 0 || params.NRChrominance > 0 {
-		sb.WriteString("Enabled=true\n")
-		sb.WriteString(fmt.Sprintf("Luminance=%d\n", clamp(params.NRLuminance, 0, 50)))
-		sb.WriteString(fmt.Sprintf("Chrominance=%d\n", clamp(params.NRChrominance, 0, 50)))
-		sb.WriteString("ChrominanceMethod=Automatic\n")
-	} else {
-		sb.WriteString("Enabled=false\n")
+	sb.WriteString("Enabled=true\n")
+	
+	// Chrominance noise reduction is safe for all files (removes color blotches)
+	chroma := 10 // Default safe value
+	if params.NRChrominance > 0 {
+		chroma = params.NRChrominance
 	}
+	sb.WriteString(fmt.Sprintf("Chrominance=%d\n", clamp(chroma, 0, 50)))
+	sb.WriteString("ChrominanceMethod=Automatic\n")
+
+	// Luminance noise reduction logic
+	luma := 0
+	if isRaw {
+		// For RAW, use AI param
+		luma = params.NRLuminance
+	} else {
+		// For JPEG, strictly avoid Luma denoise unless Dehaze is strong
+		if params.DehazeStrength > 10 {
+			// Dehaze introduces noise, counteract slightly
+			luma = 5 
+		}
+	}
+	sb.WriteString(fmt.Sprintf("Luminance=%d\n", clamp(luma, 0, 50)))
 	sb.WriteString("\n")
+	
+	// === IMPULSE NOISE REDUCTION (Hot pixels / Salt & Pepper) ===
+	// Always good to have on
+	sb.WriteString("[Impulse Denoise]\n")
+	sb.WriteString("Enabled=true\n")
+	sb.WriteString("Threshold=50\n\n")
 
 	// === RAW PROCESSING (use defaults) ===
-	sb.WriteString("[RAW]\n")
-	sb.WriteString("CA=true\n")
-	sb.WriteString("CAAutoIterations=2\n")
-	sb.WriteString("HotPixelFilter=true\n")
-	sb.WriteString("DeadPixelFilter=true\n\n")
+	if isRaw {
+		sb.WriteString("[RAW]\n")
+		sb.WriteString("CA=true\n")
+		sb.WriteString("CAAutoIterations=2\n")
+		sb.WriteString("HotPixelFilter=true\n")
+		sb.WriteString("DeadPixelFilter=true\n\n")
 
-	sb.WriteString("[RAW Bayer]\n")
-	sb.WriteString("Method=rcd\n")
-	sb.WriteString("Border=4\n")
-	sb.WriteString("ImageNum=1\n")
-	sb.WriteString("CcSteps=0\n\n")
+		sb.WriteString("[RAW Bayer]\n")
+		sb.WriteString("Method=rcd\n")
+		sb.WriteString("Border=4\n")
+		sb.WriteString("ImageNum=1\n")
+		sb.WriteString("CcSteps=0\n\n")
+	}
 
 	// === DISABLE ALL SHARPENING (causes artifacts) ===
 	sb.WriteString("[Sharpening]\n")
@@ -445,13 +478,36 @@ func GeneratePP3FromNative(params *models.PP3Params) []byte {
 	sb.WriteString("Enabled=false\n\n")
 
 	sb.WriteString("[SharpenMicro]\n")
-	sb.WriteString("Enabled=false\n\n")
+	// For JPEG, Micro Contrast creates harsh edges/halos.
+	// Limit strictly or disable if not RAW.
+	if params.SharpenMicroStrength > 0 {
+		strength := params.SharpenMicroStrength
+		if !isRaw {
+			// Cap strength for JPEGs to avoid artifacts
+			if strength > 20 {
+				strength = 20
+			}
+		}
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(strength, 0, 100)))
+		sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.SharpenMicroContrast, 0, 100)))
+		sb.WriteString(fmt.Sprintf("Uniformity=%d\n", clamp(params.SharpenMicroUniformity, 0, 100)))
+	} else {
+		sb.WriteString("Enabled=false\n")
+	}
+	sb.WriteString("\n")
 
 	sb.WriteString("[PostDemosaicSharpening]\n")
 	sb.WriteString("Enabled=false\n\n")
 
 	sb.WriteString("[Dehaze]\n")
-	sb.WriteString("Enabled=false\n\n")
+	if params.DehazeStrength != 0 {
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.DehazeStrength, -100, 100)))
+	} else {
+		sb.WriteString("Enabled=false\n")
+	}
+	sb.WriteString("\n")
 
 	// === COLOR MANAGEMENT ===
 	sb.WriteString("[Color Management]\n")
@@ -659,7 +715,8 @@ func GeneratePP3(params models.GradingParams) []byte {
 		pp3.ColorToningBalance = 50 + params.SplitToningBalance/2
 	}
 
-	return GeneratePP3FromNative(pp3)
+	// Assume RAW for Adobe conversion fallback, as Adobe params (like Temp K) are RAW-centric
+	return GeneratePP3FromNative(pp3, true)
 }
 
 // buildToneCurveFromAdobe creates a tone curve that approximates Adobe's parametric adjustments

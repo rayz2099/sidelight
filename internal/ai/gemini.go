@@ -14,8 +14,9 @@ import (
 )
 
 type GeminiClient struct {
-	client *genai.Client
-	model  *genai.GenerativeModel
+	client    *genai.Client
+	model     *genai.GenerativeModel
+	modelName string
 }
 
 // bearerTokenTransport adds Bearer token authentication for proxy endpoints
@@ -55,8 +56,9 @@ func NewGeminiClient(ctx context.Context, apiKey, endpoint string, modelName str
 
 	model := client.GenerativeModel(modelName)
 	return &GeminiClient{
-		client: client,
-		model:  model,
+		client:    client,
+		model:     model,
+		modelName: modelName,
 	}, nil
 }
 
@@ -141,7 +143,7 @@ var styles = map[string]string{
 	// --- Film / Analog Simulation ---
 	"film":      "General analog film look. Grain, soft highlights, rich colors, maybe slightly lifted blacks.",
 	"kodak":     "Mimic Kodak Gold/Portra. Warm tones, yellow/red bias in highlights, nice skin tones, nostalgic feel.",
-	"fuji":      "Mimic Fujifilm. Emphasis on greens and cool tones. Hard contrast, slightly magenta shadows.",
+	"fuji":      "Mimic Fujifilm. High transparency, emphasis on greens and natural skin tones. Punchy contrast and rich details.",
 	"polaroid":  "Instant film look. Square crop feel (in color processing), faded, shifting colors, soft focus, vintage vibe.",
 	"retro-70s": "1970s aesthetic. Strong yellow/orange cast, faded shadows, slightly blurry, vintage warmth.",
 
@@ -231,77 +233,53 @@ Output ONLY the JSON object.`, systemInstruction, metadataInfo, styleInstruction
 // pp3Styles contains RawTherapee-specific style instructions with RT parameter guidance
 var pp3Styles = map[string]string{
 	"natural": `Natural look: accurate colors, balanced exposure.
-compensation=0.45, contrast=10, lab_contrast=15, lab_chromaticity=15, nr_luminance=10, nr_chrominance=15`,
+compensation=0.45, contrast=12, lab_contrast=20, lab_chromaticity=20, nr_luminance=10, nr_chrominance=15`,
 
 	"vivid": `Vibrant colors, punchy contrast.
-compensation=0.48, contrast=15, lab_contrast=20, lab_chromaticity=25, vib_pastels=20, nr_luminance=10`,
+compensation=0.48, contrast=18, lab_contrast=25, lab_chromaticity=40, vib_pastels=30, nr_luminance=10`,
 
 	"film": `Film look: warm tones, lifted blacks, soft roll-off.
-compensation=0.50, contrast=12, lab_chromaticity=20, temperature=5800, tint=1.02, nr_luminance=5`,
+compensation=0.50, contrast=12, lab_chromaticity=25, temperature=5800, tint=1.02, nr_luminance=5`,
 
 	"kodak": `Kodak Portra style: warm, creamy skin tones, slight overexposure look.
-compensation=0.52, contrast=10, lab_chromaticity=18, temperature=5600, tint=0.98, vib_pastels=15`,
+compensation=0.52, contrast=12, lab_chromaticity=22, temperature=5600, tint=0.98, vib_pastels=20`,
 
-	"fuji": `Fujifilm style: cool shadows, high contrast, punchy greens.
-compensation=0.45, contrast=18, lab_contrast=22, lab_chromaticity=20, temperature=5200, tint=0.96`,
+	"fuji": `Fujifilm style: high transparency, punchy greens, rich details.
+compensation=0.48, contrast=15, lab_contrast=25, lab_chromaticity=35, temperature=5400, tint=1.02, dehaze_strength=15, sharpenmicro_strength=20`,
 
 	"cinematic": `Movie look: teal/orange vibe, controlled contrast, moody.
-compensation=0.42, contrast=15, lab_contrast=18, lab_chromaticity=15, vib_pastels=10`,
+compensation=0.42, contrast=18, lab_contrast=22, lab_chromaticity=20, vib_pastels=15`,
 
 	"landscape": `Landscape: clear sky, enhanced foliage, detailed.
-compensation=0.40, contrast=15, lab_contrast=20, lab_chromaticity=25, vib_pastels=20, nr_luminance=10`,
+compensation=0.40, contrast=18, lab_contrast=25, lab_chromaticity=35, vib_pastels=25, nr_luminance=10`,
 
 	"portrait": `Portrait: flattering skin tones, soft contrast, reduced texture.
-compensation=0.48, contrast=8, lab_contrast=10, lab_chromaticity=15, vib_pastels=10, nr_luminance=20, nr_chrominance=20`,
+compensation=0.48, contrast=10, lab_contrast=15, lab_chromaticity=18, vib_pastels=10, nr_luminance=20, nr_chrominance=20`,
 
 	"bw": `Black and white: strong contrast, rich tonal range.
-compensation=0.45, contrast=20, saturation=-100, lab_contrast=25, nr_luminance=15`,
+compensation=0.45, contrast=25, saturation=-100, lab_contrast=35, nr_luminance=15`,
 
 	"matte": `Matte/faded look: lifted blacks, low contrast, desaturated.
 compensation=0.52, contrast=5, lab_contrast=10, lab_chromaticity=10, black=0`,
 }
 
-const pp3SystemInstruction = `You are a RawTherapee color grading expert. Generate high-quality PP3 parameters.
+const pp3SystemInstruction = `You are an expert photo color grader for RawTherapee. 
+Analyze the image and output professional color grading parameters in JSON format.
 
-⚠️ CRITICAL QUALITY RULES:
-- **Noise Reduction**: ALWAYS apply 'nr_luminance' (10-25) and 'nr_chrominance' (15-30) unless ISO is very low. Grainy images look bad.
-- **Exposure**: 'compensation' MUST be 0.35-0.55. RT renders dark by default.
-- **Saturation**: Be conservative. Use 'vib_pastels' for natural color boosts instead of 'saturation'.
-- **Contrast**: Avoid high 'contrast' (>20) or 'lab_contrast' (>30) to prevent harsh artifacts.
+Key Parameters to include:
+- compensation: (0.35 to 0.60) controls brightness.
+- contrast: (0 to 30)
+- saturation: (-100 to 20)
+- black: (0 to 100)
+- highlight_compr: (0 to 100)
+- temperature: (2000 to 10000)
+- tint: (0.8 to 1.2)
+- lab_brightness, lab_contrast, lab_chromaticity: (-20 to 20)
+- dehaze_strength: (0 to 30) for transparency and clarity.
+- sharpenmicro_strength: (0 to 40) for local contrast/clarity.
+- nr_luminance, nr_chrominance: (0 to 40) for noise reduction.
 
-📊 ALLOWED PARAMETERS:
-- compensation: 0.35-0.55 (brightness, REQUIRED)
-- contrast: 5-25 (global contrast)
-- saturation: -100 to 20 (color saturation, -100 for B&W)
-- black: 0-150 (black point, higher = darker blacks)
-- highlight_compr: 0-100 (recover highlights)
-- temperature: 4000-7500 (white balance)
-- tint: 0.90-1.10 (green-magenta balance)
-- lab_brightness: -10 to 10 (luminance adjust)
-- lab_contrast: 0-30 (local contrast/clarity)
-- lab_chromaticity: 0-30 (color vibrancy)
-- vib_pastels: 0-30 (boost muted colors)
-- vib_saturated: 0-15 (protect saturated colors)
-- nr_luminance: 5-40 (reduce grain/noise)
-- nr_chrominance: 10-40 (remove color noise)
-
-Output ONLY this JSON format:
-{
-  "compensation": 0.45,
-  "contrast": 12,
-  "saturation": 5,
-  "black": 50,
-  "highlight_compr": 40,
-  "temperature": 5500,
-  "tint": 1.0,
-  "lab_brightness": 5,
-  "lab_contrast": 15,
-  "lab_chromaticity": 20,
-  "vib_pastels": 15,
-  "vib_saturated": 5,
-  "nr_luminance": 15,
-  "nr_chrominance": 20
-}`
+Output ONLY the JSON object.`
 
 func (g *GeminiClient) AnalyzeImageForPP3(ctx context.Context, imageData []byte, metadata models.Metadata, opts AnalysisOptions) (*models.PP3Params, error) {
 	// Use RT-specific styles instead of generic Adobe styles
@@ -312,58 +290,65 @@ func (g *GeminiClient) AnalyzeImageForPP3(ctx context.Context, imageData []byte,
 
 	metadataInfo := fmt.Sprintf(`Image Metadata:
 - Camera: %s %s
-- Lens: %s
 - ISO: %d
 - Aperture: %s
-- Shutter Speed: %s
-- Date: %s`, metadata.Make, metadata.Model, metadata.Lens, metadata.ISO, metadata.Aperture, metadata.ShutterSpeed, metadata.DateTime)
+- Shutter Speed: %s`, metadata.Make, metadata.Model, metadata.ISO, metadata.Aperture, metadata.ShutterSpeed)
 
 	// Build user instruction section
 	userInstructions := ""
 	if opts.UserPrompt != "" {
-		userInstructions = fmt.Sprintf("\n\n🎯 USER SPECIFIC INSTRUCTIONS (prioritize these):\n%s", opts.UserPrompt)
+		userInstructions = fmt.Sprintf("\n\nUser Goal: %s", opts.UserPrompt)
 	}
 
 	fullPrompt := fmt.Sprintf(`%s
 
 %s
     
-📷 Style Goal: %s
+Desired Style: %s
 %s
 
-Analyze the image and generate RT parameters. Output ONLY JSON.`,
+Analyze the image and generate the JSON for RawTherapee parameters.`,
 		pp3SystemInstruction, metadataInfo, styleInstruction, userInstructions)
 
 	prompt := []genai.Part{
-		genai.ImageData("jpeg", imageData),
+		genai.ImageData("image/jpeg", imageData),
 		genai.Text(fullPrompt),
+		genai.Text("Output the JSON object now."),
 	}
 
-	resp, err := g.model.GenerateContent(ctx, prompt...)
-	if err != nil {
-		return nil, fmt.Errorf("gemini generation failed: %w", err)
-	}
+	var resp *genai.GenerateContentResponse
+	var err error
 
-	if resp == nil {
-		return nil, fmt.Errorf("gemini returned nil response")
-	}
-
-	// Check for prompt feedback (safety blocks, etc.)
-	if resp.PromptFeedback != nil {
-		if resp.PromptFeedback.BlockReason != 0 {
-			return nil, fmt.Errorf("prompt blocked by gemini: reason=%v", resp.PromptFeedback.BlockReason)
+	// Retry logic: try up to 3 times
+	for attempt := 1; attempt <= 3; attempt++ {
+		resp, err = g.model.GenerateContent(ctx, prompt...)
+		if err != nil {
+			if attempt == 3 {
+				return nil, fmt.Errorf("gemini generation failed after 3 attempts: %w", err)
+			}
+			continue
 		}
-	}
 
-	if len(resp.Candidates) == 0 {
-		// Try to get more info
-		return nil, fmt.Errorf("no candidates returned from gemini (promptFeedback=%+v)", resp.PromptFeedback)
+		if resp == nil || len(resp.Candidates) == 0 {
+			if attempt == 3 {
+				feedback := "<nil>"
+				if resp != nil {
+					feedback = fmt.Sprintf("%+v", resp.PromptFeedback)
+				}
+				return nil, fmt.Errorf("no candidates returned after 3 attempts (imageSize=%d, feedback=%s)", len(imageData), feedback)
+			}
+			continue
+		}
+		
+		// Success
+		break
 	}
 
 	// Check if candidate was blocked
+
+	// Check if candidate was blocked
 	if resp.Candidates[0].FinishReason != 0 && resp.Candidates[0].FinishReason != 1 {
-		// 1 = Stop (normal), other values indicate issues
-		return nil, fmt.Errorf("candidate finished with reason: %v", resp.Candidates[0].FinishReason)
+		return nil, fmt.Errorf("candidate finished with reason: %v (feedback=%+v)", resp.Candidates[0].FinishReason, resp.PromptFeedback)
 	}
 
 	if resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
@@ -377,9 +362,12 @@ Analyze the image and generate RT parameters. Output ONLY JSON.`,
 	}
 
 	cleanJSON := strings.TrimSpace(string(text))
-	cleanJSON = strings.TrimPrefix(cleanJSON, "```json")
-	cleanJSON = strings.TrimSuffix(cleanJSON, "```")
-	cleanJSON = strings.TrimSpace(cleanJSON)
+	if idx := strings.Index(cleanJSON, "{"); idx != -1 {
+		cleanJSON = cleanJSON[idx:]
+	}
+	if idx := strings.LastIndex(cleanJSON, "}"); idx != -1 {
+		cleanJSON = cleanJSON[:idx+1]
+	}
 
 	var params models.PP3Params
 	if err := json.Unmarshal([]byte(cleanJSON), &params); err != nil {

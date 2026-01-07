@@ -200,11 +200,17 @@ func (p *Processor) generatePP3Native(ctx context.Context, rawPath string, previ
 	}
 	result.PP3Params = pp3Params
 
-	// Generate PP3 file using native params
-	pp3Data := rt.GeneratePP3FromNative(pp3Params)
+	// Detect if file is RAW or standard image (JPG/PNG)
+	ext := strings.ToLower(filepath.Ext(rawPath))
+	isRaw := true
+	if ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
+		isRaw = false
+	}
 
-	ext := filepath.Ext(rawPath)
-	pp3Path := strings.TrimSuffix(rawPath, ext) + ".pp3"
+	// Generate PP3 file using native params
+	pp3Data := rt.GeneratePP3FromNative(pp3Params, isRaw)
+
+	pp3Path := strings.TrimSuffix(rawPath, filepath.Ext(rawPath)) + ".pp3"
 	if err := os.WriteFile(pp3Path, pp3Data, 0644); err != nil {
 		return fmt.Errorf("failed to write pp3 file: %w", err)
 	}
