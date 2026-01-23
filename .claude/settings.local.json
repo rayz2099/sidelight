@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(./bin/sidelight grade:*)",
+      "Bash(/Users/linran/develop/rawtherapee/rawtherapee-cli:*)",
+      "Bash(ls -la \"/Users/linran/workspace/lightroom/images/\"KAI01144_fuji_preview*\"\")",
+      "Bash(sips:*)",
+      "Bash(ls:*)",
+      "Bash(xargs:*)",
+      "Bash(md5 \"/Users/linran/workspace/lightroom/images/\"*FIXED*.jpg)",
+      "Bash(md5:*)",
+      "Bash(chmod:*)"
+    ]
+  }
+}

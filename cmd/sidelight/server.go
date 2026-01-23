@@ -14,7 +14,9 @@ import (
 )
 
 var (
-	serverPort int
+	serverPort    int
+	serverTempDir string
+	keepTemp      bool
 )
 
 var serverCmd = &cobra.Command{
@@ -27,6 +29,8 @@ var serverCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.Flags().IntVarP(&serverPort, "port", "p", 8080, "Port to listen on")
+	serverCmd.Flags().StringVarP(&serverTempDir, "temp-dir", "t", "", "Temporary directory for file processing (default: system temp)")
+	serverCmd.Flags().BoolVarP(&keepTemp, "keep", "k", false, "Keep temporary files after processing")
 }
 
 func runServer(cmd *cobra.Command, args []string) {
@@ -51,7 +55,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	processor := app.NewProcessor(ext, aiClient)
 
 	// Start server
-	srv := server.NewServer(processor, serverPort)
+	srv := server.NewServer(processor, serverPort, serverTempDir, keepTemp)
 	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
