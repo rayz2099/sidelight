@@ -30,8 +30,15 @@ func NewProcessor(ext extractor.Extractor, ai ai.Client) *Processor {
 	}
 }
 
+// ProcessOptions controls the processing behavior including AI analysis and output paths.
+type ProcessOptions struct {
+	ai.AnalysisOptions
+	OutputDir  string
+	OutputFile string
+}
+
 // ProcessFile handles a single photo file (RAW or standard).
-func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.AnalysisOptions) (*models.ProcessingResult, error) {
+func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ProcessOptions) (*models.ProcessingResult, error) {
 	result := &models.ProcessingResult{
 		SourcePath: rawPath,
 	}
@@ -58,13 +65,13 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 
 	// Handle XMP (Adobe)
 	if uniqueFormats["xmp"] {
-		params, err := p.aiClient.AnalyzeImageLR(ctx, previewData, *metadata, opts)
+		params, err := p.aiClient.AnalyzeImageLR(ctx, previewData, *metadata, opts.AnalysisOptions)
 		if err != nil {
 			return nil, fmt.Errorf("ai analysis (LR) failed: %w", err)
 		}
 		result.Params = *params
 
-		if err := p.generateXMP(ctx, rawPath, params, result); err != nil {
+		if err := p.generateXMP(ctx, rawPath, params, result, opts); err != nil {
 			return nil, err
 		}
 	}
@@ -79,7 +86,35 @@ func (p *Processor) ProcessFile(ctx context.Context, rawPath string, opts ai.Ana
 	return result, nil
 }
 
-func (p *Processor) generateXMP(ctx context.Context, rawPath string, params *models.GradingParams, result *models.ProcessingResult) error {
+func (p *Processor) resolveOutputPath(rawPath, ext string, opts ProcessOptions) string {
+	dir := filepath.Dir(rawPath)
+	if opts.OutputDir != "" {
+		dir = opts.OutputDir
+	}
+
+	// Create directory if it doesn't exist
+	if opts.OutputDir != "" {
+		_ = os.MkdirAll(dir, 0755)
+	}
+
+	baseName := strings.TrimSuffix(filepath.Base(rawPath), filepath.Ext(rawPath))
+	if opts.OutputFile != "" {
+		// If OutputFile is specified, use it as the base name
+		// If it has an extension, we might want to respect it or strip it depending on usage.
+		// For simplicity, if user provides "output.pp3", we use "output" as base.
+		customBase := filepath.Base(opts.OutputFile)
+		customExt := filepath.Ext(customBase)
+		if customExt != "" {
+			baseName = strings.TrimSuffix(customBase, customExt)
+		} else {
+			baseName = customBase
+		}
+	}
+
+	return filepath.Join(dir, baseName+ext)
+}
+
+func (p *Processor) generateXMP(ctx context.Context, rawPath string, params *models.GradingParams, result *models.ProcessingResult, opts ProcessOptions) error {
 	settings := xmp.NewCameraRawSettings()
 
 	checkExt := strings.ToLower(strings.TrimSpace(filepath.Ext(rawPath)))
@@ -152,8 +187,7 @@ func (p *Processor) generateXMP(ctx context.Context, rawPath string, params *mod
 		return fmt.Errorf("xmp marshaling failed: %w", err)
 	}
 
-	ext := filepath.Ext(rawPath)
-	xmpPath := strings.TrimSuffix(rawPath, ext) + ".xmp"
+	xmpPath := p.resolveOutputPath(rawPath, ".xmp", opts)
 	result.XmpPath = xmpPath
 
 	if err := os.WriteFile(xmpPath, xmpData, 0644); err != nil {
@@ -186,7 +220,7 @@ type PP3NativeAnalyzer interface {
 	AnalyzeImageForPP3(ctx context.Context, imageData []byte, metadata models.Metadata, opts ai.AnalysisOptions) (*models.PP3Params, error)
 }
 
-func (p *Processor) generatePP3Native(ctx context.Context, rawPath string, previewData []byte, metadata *models.Metadata, opts ai.AnalysisOptions, result *models.ProcessingResult) error {
+func (p *Processor) generatePP3Native(ctx context.Context, rawPath string, previewData []byte, metadata *models.Metadata, opts ProcessOptions, result *models.ProcessingResult) error {
 	// Check if AI client supports native PP3 generation
 	nativeAnalyzer, ok := p.aiClient.(PP3NativeAnalyzer)
 	if !ok {
@@ -194,7 +228,7 @@ func (p *Processor) generatePP3Native(ctx context.Context, rawPath string, previ
 	}
 
 	// Get PP3 native params from AI
-	pp3Params, err := nativeAnalyzer.AnalyzeImageForPP3(ctx, previewData, *metadata, opts)
+	pp3Params, err := nativeAnalyzer.AnalyzeImageForPP3(ctx, previewData, *metadata, opts.AnalysisOptions)
 	if err != nil {
 		return fmt.Errorf("PP3 native analysis failed: %w", err)
 	}
@@ -207,10 +241,17 @@ func (p *Processor) generatePP3Native(ctx context.Context, rawPath string, previ
 		isRaw = false
 	}
 
+<<<<<<< Updated upstream
 	// Generate PP3 file using native params
 	pp3Data := rt.GeneratePP3FromNative(pp3Params, isRaw)
 
 	pp3Path := strings.TrimSuffix(rawPath, filepath.Ext(rawPath)) + ".pp3"
+||||||| Stash base
+	ext := filepath.Ext(rawPath)
+	pp3Path := strings.TrimSuffix(rawPath, ext) + ".pp3"
+=======
+	pp3Path := p.resolveOutputPath(rawPath, ".pp3", opts)
+>>>>>>> Stashed changes
 	if err := os.WriteFile(pp3Path, pp3Data, 0644); err != nil {
 		return fmt.Errorf("failed to write pp3 file: %w", err)
 	}

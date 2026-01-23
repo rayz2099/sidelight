@@ -157,6 +157,37 @@ type PP3Params struct {
 
 	// Vignette
 	VignetteAmount int `json:"vignette_amount"` // -100 to 100
+
+	// HSL Adjustments (Channel mixer for specific color ranges)
+	// Hue adjustments (shift colors)
+	HueRed     int `json:"hue_red"`     // -100 to 100
+	HueOrange  int `json:"hue_orange"`  // -100 to 100
+	HueYellow  int `json:"hue_yellow"`  // -100 to 100
+	HueGreen   int `json:"hue_green"`   // -100 to 100
+	HueAqua    int `json:"hue_aqua"`    // -100 to 100
+	HueBlue    int `json:"hue_blue"`    // -100 to 100
+	HuePurple  int `json:"hue_purple"`  // -100 to 100
+	HueMagenta int `json:"hue_magenta"` // -100 to 100
+
+	// Saturation adjustments (color intensity per channel)
+	SaturationRed     int `json:"saturation_red"`     // -100 to 100
+	SaturationOrange  int `json:"saturation_orange"`  // -100 to 100
+	SaturationYellow  int `json:"saturation_yellow"`  // -100 to 100
+	SaturationGreen   int `json:"saturation_green"`   // -100 to 100
+	SaturationAqua    int `json:"saturation_aqua"`    // -100 to 100
+	SaturationBlue    int `json:"saturation_blue"`    // -100 to 100
+	SaturationPurple  int `json:"saturation_purple"`  // -100 to 100
+	SaturationMagenta int `json:"saturation_magenta"` // -100 to 100
+
+	// Luminance adjustments (brightness per channel)
+	LuminanceRed     int `json:"luminance_red"`     // -100 to 100
+	LuminanceOrange  int `json:"luminance_orange"`  // -100 to 100
+	LuminanceYellow  int `json:"luminance_yellow"`  // -100 to 100
+	LuminanceGreen   int `json:"luminance_green"`   // -100 to 100
+	LuminanceAqua    int `json:"luminance_aqua"`    // -100 to 100
+	LuminanceBlue    int `json:"luminance_blue"`    // -100 to 100
+	LuminancePurple  int `json:"luminance_purple"`  // -100 to 100
+	LuminanceMagenta int `json:"luminance_magenta"` // -100 to 100
 }
 
 // ProcessingResult holds the outcome of processing a single file.
