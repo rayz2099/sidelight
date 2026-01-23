@@ -2,7 +2,7 @@
 set -e
 
 # Config
-RT_CLI="/Users/linran/Downloads/RawTherapee_macOS_15.4_Universal_5.12_folder/rawtherapee-cli"
+RT_CLI="rawtherapee-cli"
 SIDELIGHT_BIN="./bin/sidelight"
 
 # Args

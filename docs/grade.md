@@ -18,11 +18,11 @@ sidelight grade -f pp3 -s fuji photo.ARW
 
 ## 🔹 平台支持 (Platform Support)
 
-| 格式 | 平台 | 说明 |
-|:---|:---|:---|
-| **`xmp`** | Adobe Lightroom / Camera Raw | 行业标准。对于 JPG/PNG，元数据将被直接嵌入文件。 |
-| **`pp3`** | RawTherapee | 针对开源平台优化。使用原生 PP3 参数生成，画质更佳，颗粒感更低。 |
-| **`all`** | 两者均生成 | 同时生成 .xmp 和 .pp3 文件。 |
+| 格式        | 平台                           | 说明                                 |
+|:----------|:-----------------------------|:-----------------------------------|
+| **`xmp`** | Adobe Lightroom / Camera Raw | 行业标准。对于 JPG/PNG，元数据将被直接嵌入文件。       |
+| **`pp3`** | RawTherapee                  | 针对开源平台优化。使用原生 PP3 参数生成，画质更佳，颗粒感更低。 |
+| **`all`** | 两者均生成                        | 同时生成 .xmp 和 .pp3 文件。               |
 
 ---
 

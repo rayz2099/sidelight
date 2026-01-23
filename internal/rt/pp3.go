@@ -206,20 +206,20 @@ func clampFloat(val, min, max float64) float64 {
 // This prevents dark/purple/oversaturated images from extreme AI values
 func sanitizeParams(params *models.PP3Params) {
 	// === EXPOSURE - CRITICAL FOR BRIGHTNESS ===
-	// RT renders darker than LR, compensation MUST be positive for normal exposure
-	if params.Compensation < 0.25 {
-		params.Compensation = 0.4 // Safe default
+	// RT renders darker than LR, compensation typically needs to be positive
+	if params.Compensation < 0.20 {
+		params.Compensation = 0.30 // Allow slightly more underexposure for artistic effect
 	}
-	if params.Compensation > 1.5 {
-		params.Compensation = 1.5
+	if params.Compensation > 2.0 {
+		params.Compensation = 2.0 // Allow more overexposure for high-key looks
 	}
 
-	// === CONTRAST - keep moderate ===
-	if params.Contrast < -20 {
-		params.Contrast = -20
+	// === CONTRAST - allow wider range for artistic effects ===
+	if params.Contrast < -40 {
+		params.Contrast = -40
 	}
-	if params.Contrast > 30 {
-		params.Contrast = 30
+	if params.Contrast > 40 {
+		params.Contrast = 40
 	}
 
 	// === BLACK POINT - too high crushes shadows ===
@@ -233,36 +233,36 @@ func sanitizeParams(params *models.PP3Params) {
 	}
 
 	// === HIGHLIGHT/SHADOW RECOVERY ===
-	if params.HighlightRecovery > 70 {
-		params.HighlightRecovery = 70
+	if params.HighlightRecovery > 80 {
+		params.HighlightRecovery = 80
 	}
-	if params.ShadowRecovery > 60 {
-		params.ShadowRecovery = 60
+	if params.ShadowRecovery > 80 {
+		params.ShadowRecovery = 80
 	}
 
 	// === LAB ADJUSTMENTS ===
-	// Brightness should not be negative (makes image dark)
-	if params.LabBrightness < 0 {
-		params.LabBrightness = 0
+	// Allow negative brightness for dark/moody effects
+	if params.LabBrightness < -20 {
+		params.LabBrightness = -20
 	}
-	if params.LabBrightness > 20 {
-		params.LabBrightness = 20
-	}
-
-	// Lab contrast
-	if params.LabContrast < 0 {
-		params.LabContrast = 0
-	}
-	if params.LabContrast > 40 {
-		params.LabContrast = 40
+	if params.LabBrightness > 30 {
+		params.LabBrightness = 30
 	}
 
-	// Lab chromaticity - too high causes oversaturation
-	if params.LabChromaticity < 0 {
-		params.LabChromaticity = 0
+	// Lab contrast - allow negative for soft looks
+	if params.LabContrast < -20 {
+		params.LabContrast = -20
 	}
-	if params.LabChromaticity > 45 {
-		params.LabChromaticity = 45
+	if params.LabContrast > 50 {
+		params.LabContrast = 50
+	}
+
+	// Lab chromaticity - allow wider range for creative color work
+	if params.LabChromaticity < -20 {
+		params.LabChromaticity = -20
+	}
+	if params.LabChromaticity > 60 {
+		params.LabChromaticity = 60
 	}
 
 	// === DEHAZE ===
@@ -274,12 +274,12 @@ func sanitizeParams(params *models.PP3Params) {
 	}
 
 	// === WHITE BALANCE ===
-	// Temperature: allow cooler temps for Fuji-style looks
-	if params.Temperature < 4200 {
-		params.Temperature = 4200
+	// Temperature: allow extreme temps for artistic effects
+	if params.Temperature < 3000 {
+		params.Temperature = 3000
 	}
-	if params.Temperature > 7500 {
-		params.Temperature = 7500
+	if params.Temperature > 9500 {
+		params.Temperature = 9500
 	}
 
 	// Tint: allow slightly more range for stylistic effects
@@ -290,9 +290,9 @@ func sanitizeParams(params *models.PP3Params) {
 		params.Tint = 1.10
 	}
 
-	// === COLOR TONING - CRITICAL FOR SKIN TONES ===
-	// Limit color toning to avoid purple/green color casts
-	maxCT := 12
+	// === COLOR TONING - ALLOW MODERATE VALUES FOR STABILITY ===
+	// Allow moderate color toning for cinematic effects (avoid RT CLI crashes)
+	maxCT := 30 // Balanced between effect and stability
 	params.ColorToningShadowR = clamp(params.ColorToningShadowR, -maxCT, maxCT)
 	params.ColorToningShadowG = clamp(params.ColorToningShadowG, -maxCT, maxCT)
 	params.ColorToningShadowB = clamp(params.ColorToningShadowB, -maxCT, maxCT)
@@ -301,19 +301,26 @@ func sanitizeParams(params *models.PP3Params) {
 	params.ColorToningHighlightB = clamp(params.ColorToningHighlightB, -maxCT, maxCT)
 
 	// === SATURATION ===
-	if params.Saturation < -10 {
-		params.Saturation = -10
+	// Allow full range including desaturation for creative effects
+	if params.Saturation < -100 {
+		params.Saturation = -100  // Full desaturation for B&W
 	}
-	if params.Saturation > 25 {
-		params.Saturation = 25
+	if params.Saturation > 40 {
+		params.Saturation = 40   // Higher saturation for vivid looks
 	}
 
 	// === VIBRANCE ===
-	if params.VibPastels > 45 {
-		params.VibPastels = 45
+	if params.VibPastels < -40 {
+		params.VibPastels = -40
 	}
-	if params.VibSaturated > 25 {
-		params.VibSaturated = 25
+	if params.VibPastels > 60 {
+		params.VibPastels = 60
+	}
+	if params.VibSaturated < -30 {
+		params.VibSaturated = -30
+	}
+	if params.VibSaturated > 40 {
+		params.VibSaturated = 40
 	}
 
 	// === SHARPENING - keep moderate ===
@@ -369,7 +376,15 @@ func GeneratePP3FromNative(params *models.PP3Params) []byte {
 	sb.WriteString(fmt.Sprintf("Saturation=%d\n", clamp(params.Saturation, -50, 50)))
 	sb.WriteString(fmt.Sprintf("Black=%d\n", clamp(params.Black, 0, 300)))
 	sb.WriteString(fmt.Sprintf("HighlightCompr=%d\n", clamp(params.HighlightCompr, 0, 200)))
-	sb.WriteString("HighlightComprThreshold=0\n\n")
+	sb.WriteString("HighlightComprThreshold=0\n")
+	// Add shadow/highlight recovery if specified
+	if params.ShadowRecovery > 0 {
+		sb.WriteString(fmt.Sprintf("ShadowRecovery=%d\n", clamp(params.ShadowRecovery, 0, 80)))
+	}
+	if params.HighlightRecovery > 0 {
+		sb.WriteString(fmt.Sprintf("HighlightRecovery=%d\n", clamp(params.HighlightRecovery, 0, 80)))
+	}
+	sb.WriteString("\n")
 
 	// === TONE CURVE (simple) ===
 	sb.WriteString("[ToneCurve]\n")
@@ -437,21 +452,149 @@ func GeneratePP3FromNative(params *models.PP3Params) []byte {
 	sb.WriteString("ImageNum=1\n")
 	sb.WriteString("CcSteps=0\n\n")
 
-	// === DISABLE ALL SHARPENING (causes artifacts) ===
-	sb.WriteString("[Sharpening]\n")
-	sb.WriteString("Enabled=false\n\n")
+	// === SHARPENING (enable selectively based on parameters) ===
+	// Output Sharpening - for final image crispness
+	if params.SharpenEnabled && params.SharpenAmount > 0 {
+		sb.WriteString("[Sharpening]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString("Contrast=20\n")
+		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(params.SharpenAmount, 50, 500)))
+		sb.WriteString(fmt.Sprintf("Radius=%.2f\n", clampFloat(params.SharpenRadius, 0.5, 2.0)))
+		sb.WriteString("OnlyEdges=false\n")
+		sb.WriteString("EdgedetectionRadius=1.9\n")
+		sb.WriteString("EdgeTolerance=1800\n")
+		sb.WriteString("HalocontrolEnabled=false\n\n")
+	} else {
+		sb.WriteString("[Sharpening]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
 
-	sb.WriteString("[SharpenEdge]\n")
-	sb.WriteString("Enabled=false\n\n")
+	// Edge Sharpening - for edge enhancement
+	if params.EdgeSharpenEnabled && params.EdgeSharpenAmount > 0 {
+		sb.WriteString("[SharpenEdge]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(params.EdgeSharpenAmount, 10, 100)))
+		sb.WriteString(fmt.Sprintf("Passes=%d\n", clamp(params.EdgeSharpenPasses, 1, 3)))
+		sb.WriteString("ThreeChannels=false\n\n")
+	} else {
+		sb.WriteString("[SharpenEdge]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
 
-	sb.WriteString("[SharpenMicro]\n")
-	sb.WriteString("Enabled=false\n\n")
+	// Micro Contrast (local contrast/clarity) - always include as it's similar to Adobe Clarity
+	if params.SharpenMicroStrength > 0 {
+		sb.WriteString("[SharpenMicro]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.SharpenMicroStrength, 5, 60)))
+		sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.SharpenMicroContrast, 5, 40)))
+		sb.WriteString(fmt.Sprintf("Uniformity=%d\n", clamp(params.SharpenMicroUniformity, 20, 100)))
+		sb.WriteString("Matrix=false\n\n")
+	} else {
+		sb.WriteString("[SharpenMicro]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
 
-	sb.WriteString("[PostDemosaicSharpening]\n")
-	sb.WriteString("Enabled=false\n\n")
+	// Capture Sharpening - for demosaic-level sharpening (important for perceived quality)
+	if params.CaptureSharpEnabled && params.CaptureSharpAmount > 0 {
+		sb.WriteString("[PostDemosaicSharpening]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.CaptureSharpAmount, 10, 100)))
+		sb.WriteString(fmt.Sprintf("Radius=%.2f\n", clampFloat(params.CaptureSharpRadius, 0.7, 1.5)))
+		sb.WriteString("DeconvolutionAutoRadius=true\n")
+		sb.WriteString("DeconvolutionAutoRadiusFactor=1.0\n\n")
+	} else {
+		sb.WriteString("[PostDemosaicSharpening]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
 
-	sb.WriteString("[Dehaze]\n")
-	sb.WriteString("Enabled=false\n\n")
+	// === DEHAZE (atmospheric haze removal) ===
+	if params.DehazeStrength > 0 {
+		sb.WriteString("[Dehaze]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.DehazeStrength, 0, 40)))
+		sb.WriteString("ShowDepthMap=false\n")
+		sb.WriteString("Depth=25\n")
+		sb.WriteString("Luminosity=true\n\n")
+	} else {
+		sb.WriteString("[Dehaze]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
+
+	// === HSL ADJUSTMENTS (Color Correction) ===
+	hasHSLAdjustments := params.HueRed != 0 || params.HueOrange != 0 || params.HueYellow != 0 || params.HueGreen != 0 ||
+		params.HueAqua != 0 || params.HueBlue != 0 || params.HuePurple != 0 || params.HueMagenta != 0 ||
+		params.SaturationRed != 0 || params.SaturationOrange != 0 || params.SaturationYellow != 0 || params.SaturationGreen != 0 ||
+		params.SaturationAqua != 0 || params.SaturationBlue != 0 || params.SaturationPurple != 0 || params.SaturationMagenta != 0 ||
+		params.LuminanceRed != 0 || params.LuminanceOrange != 0 || params.LuminanceYellow != 0 || params.LuminanceGreen != 0 ||
+		params.LuminanceAqua != 0 || params.LuminanceBlue != 0 || params.LuminancePurple != 0 || params.LuminanceMagenta != 0
+
+	if hasHSLAdjustments {
+		sb.WriteString("[Color Correction]\n")
+		sb.WriteString("Enabled=true\n")
+		// Color regions (RT has 6 main regions: red, yellow, green, cyan, blue, magenta)
+		sb.WriteString("ColorCorrectionRegions=1;0.166667;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("2;0.33;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("3;0.5;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("4;0.66;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("5;0.83;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("6;1;0.5;0.5;0.5;0;1;1;0;\n")
+
+		// Map Adobe's 8 colors to RT's 6 color regions (combine some)
+		redHue := clamp(params.HueRed, -100, 100)
+		yellowHue := clamp((params.HueOrange+params.HueYellow)/2, -100, 100) // Combine orange and yellow
+		greenHue := clamp(params.HueGreen, -100, 100)
+		cyanHue := clamp(params.HueAqua, -100, 100)
+		blueHue := clamp(params.HueBlue, -100, 100)
+		magentaHue := clamp((params.HuePurple+params.HueMagenta)/2, -100, 100) // Combine purple and magenta
+
+		sb.WriteString(fmt.Sprintf("HueShift=%d;%d;%d;%d;%d;%d;\n", redHue, yellowHue, greenHue, cyanHue, blueHue, magentaHue))
+
+		redSat := clamp(params.SaturationRed, -100, 100)
+		yellowSat := clamp((params.SaturationOrange+params.SaturationYellow)/2, -100, 100)
+		greenSat := clamp(params.SaturationGreen, -100, 100)
+		cyanSat := clamp(params.SaturationAqua, -100, 100)
+		blueSat := clamp(params.SaturationBlue, -100, 100)
+		magentaSat := clamp((params.SaturationPurple+params.SaturationMagenta)/2, -100, 100)
+
+		sb.WriteString(fmt.Sprintf("SaturationAdjustment=%d;%d;%d;%d;%d;%d;\n", redSat, yellowSat, greenSat, cyanSat, blueSat, magentaSat))
+
+		redLum := clamp(params.LuminanceRed, -100, 100)
+		yellowLum := clamp((params.LuminanceOrange+params.LuminanceYellow)/2, -100, 100)
+		greenLum := clamp(params.LuminanceGreen, -100, 100)
+		cyanLum := clamp(params.LuminanceAqua, -100, 100)
+		blueLum := clamp(params.LuminanceBlue, -100, 100)
+		magentaLum := clamp((params.LuminancePurple+params.LuminanceMagenta)/2, -100, 100)
+
+		sb.WriteString(fmt.Sprintf("LuminanceAdjustment=%d;%d;%d;%d;%d;%d;\n", redLum, yellowLum, greenLum, cyanLum, blueLum, magentaLum))
+		sb.WriteString("\n")
+	} else {
+		sb.WriteString("[Color Correction]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
+
+	// === COLOR TONING (Split Toning equivalent) ===
+	hasColorToning := params.ColorToningShadowR != 0 || params.ColorToningShadowG != 0 || params.ColorToningShadowB != 0 ||
+		params.ColorToningHighlightR != 0 || params.ColorToningHighlightG != 0 || params.ColorToningHighlightB != 0
+
+	if hasColorToning {
+		sb.WriteString("[Color Toning]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString("Method=RGBSliders\n")
+		sb.WriteString(fmt.Sprintf("RedShadows=%d\n", clamp(params.ColorToningShadowR, -100, 100)))
+		sb.WriteString(fmt.Sprintf("GreenShadows=%d\n", clamp(params.ColorToningShadowG, -100, 100)))
+		sb.WriteString(fmt.Sprintf("BlueShadows=%d\n", clamp(params.ColorToningShadowB, -100, 100)))
+		sb.WriteString(fmt.Sprintf("RedHighlights=%d\n", clamp(params.ColorToningHighlightR, -100, 100)))
+		sb.WriteString(fmt.Sprintf("GreenHighlights=%d\n", clamp(params.ColorToningHighlightG, -100, 100)))
+		sb.WriteString(fmt.Sprintf("BlueHighlights=%d\n", clamp(params.ColorToningHighlightB, -100, 100)))
+		sb.WriteString(fmt.Sprintf("Balance=%d\n", clamp(params.ColorToningBalance, 0, 100)))
+		sb.WriteString("Saturation=30\n")
+		sb.WriteString("Strength=50\n")
+		sb.WriteString("HighlightsColorSaturation=60;80;\n")
+		sb.WriteString("ShadowsColorSaturation=80;208;\n\n")
+	} else {
+		sb.WriteString("[Color Toning]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
 
 	// === COLOR MANAGEMENT ===
 	sb.WriteString("[Color Management]\n")
@@ -644,6 +787,31 @@ func GeneratePP3(params models.GradingParams) []byte {
 		NRChrominance:          params.ColorNoiseReduction,
 		VignetteAmount:         params.PostCropVignetteAmount,
 		ToneCurve:              toneCurve,
+		// HSL mappings from Adobe GradingParams
+		HueRed:     params.HueAdjustmentRed,
+		HueOrange:  params.HueAdjustmentOrange,
+		HueYellow:  params.HueAdjustmentYellow,
+		HueGreen:   params.HueAdjustmentGreen,
+		HueAqua:    params.HueAdjustmentAqua,
+		HueBlue:    params.HueAdjustmentBlue,
+		HuePurple:  params.HueAdjustmentPurple,
+		HueMagenta: params.HueAdjustmentMagenta,
+		SaturationRed:     params.SaturationAdjustmentRed,
+		SaturationOrange:  params.SaturationAdjustmentOrange,
+		SaturationYellow:  params.SaturationAdjustmentYellow,
+		SaturationGreen:   params.SaturationAdjustmentGreen,
+		SaturationAqua:    params.SaturationAdjustmentAqua,
+		SaturationBlue:    params.SaturationAdjustmentBlue,
+		SaturationPurple:  params.SaturationAdjustmentPurple,
+		SaturationMagenta: params.SaturationAdjustmentMagenta,
+		LuminanceRed:     params.LuminanceAdjustmentRed,
+		LuminanceOrange:  params.LuminanceAdjustmentOrange,
+		LuminanceYellow:  params.LuminanceAdjustmentYellow,
+		LuminanceGreen:   params.LuminanceAdjustmentGreen,
+		LuminanceAqua:    params.LuminanceAdjustmentAqua,
+		LuminanceBlue:    params.LuminanceAdjustmentBlue,
+		LuminancePurple:  params.LuminanceAdjustmentPurple,
+		LuminanceMagenta: params.LuminanceAdjustmentMagenta,
 	}
 
 	// Color toning from split toning
