@@ -21,6 +21,8 @@ var (
 	style       string
 	userPrompt  string
 	formats     []string
+	outputFile  string
+	outputDir   string
 )
 
 var gradeCmd = &cobra.Command{
@@ -40,6 +42,8 @@ func init() {
 	gradeCmd.Flags().StringVarP(&style, "style", "s", "natural", "Grading style (natural, cinematic, film, bw, portrait)")
 	gradeCmd.Flags().StringVarP(&userPrompt, "prompt", "p", "", "Custom instructions (e.g., 'warmer', 'high contrast')")
 	gradeCmd.Flags().StringSliceVarP(&formats, "format", "f", []string{"xmp"}, "Output formats (xmp, pp3, rt, all)")
+	gradeCmd.Flags().StringVarP(&outputFile, "output-file", "o", "", "Custom output filename (single file only)")
+	gradeCmd.Flags().StringVarP(&outputDir, "output-dir", "d", "", "Directory to save output files")
 
 	// Env vars - 设置环境变量作为最低优先级的默认值
 	viper.SetEnvPrefix("GEMINI")
@@ -58,6 +62,8 @@ type GradeParams struct {
 	UserPrompt   string
 	Formats      []string
 	ShowProgress bool
+	OutputDir    string
+	OutputFile   string
 }
 
 // processGrading 执行实际的图片处理逻辑
@@ -65,9 +71,13 @@ func processGrading(ctx context.Context, params GradeParams) []error {
 	processor := app.NewProcessor(params.Extractor, params.AIClient)
 	processor.Formats = params.Formats
 
-	opts := ai.AnalysisOptions{
-		Style:      params.Style,
-		UserPrompt: params.UserPrompt,
+	opts := app.ProcessOptions{
+		AnalysisOptions: ai.AnalysisOptions{
+			Style:      params.Style,
+			UserPrompt: params.UserPrompt,
+		},
+		OutputDir:  params.OutputDir,
+		OutputFile: params.OutputFile,
 	}
 
 	files := params.Files
@@ -156,6 +166,10 @@ func runGrade(cmd *cobra.Command, args []string) {
 		log.Fatal("No supported files found to process.")
 	}
 
+	if outputFile != "" && len(files) > 1 {
+		log.Fatal("Error: --output-file can only be used when processing a single file.")
+	}
+
 	// Handle "all" format
 	finalFormats := formats
 	for _, f := range formats {
@@ -174,6 +188,8 @@ func runGrade(cmd *cobra.Command, args []string) {
 		UserPrompt:   userPrompt,
 		Formats:      finalFormats,
 		ShowProgress: true,
+		OutputDir:    outputDir,
+		OutputFile:   outputFile,
 	}
 
 	allErrs := processGrading(ctx, params)
