@@ -302,8 +302,17 @@ func sanitizeParams(params *models.PP3Params) {
 
 	// === SATURATION ===
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	if params.Saturation < -100 {
 		params.Saturation = -100
+||||||| Stash base
+	if params.Saturation < -10 {
+		params.Saturation = -10
+=======
+	// Allow full range including desaturation for creative effects
+	if params.Saturation < -100 {
+		params.Saturation = -100  // Full desaturation for B&W
+>>>>>>> Stashed changes
 ||||||| Stash base
 	if params.Saturation < -10 {
 		params.Saturation = -10
@@ -385,10 +394,24 @@ func GeneratePP3FromNative(params *models.PP3Params, isRaw bool) []byte {
 	sb.WriteString(fmt.Sprintf("Black=%d\n", clamp(params.Black, 0, 300)))
 	sb.WriteString(fmt.Sprintf("HighlightCompr=%d\n", clamp(params.HighlightCompr, 0, 200)))
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	sb.WriteString("HighlightComprThreshold=0\n")
 	// Use Blend method for natural highlight rolloff (similar to LR)
 	sb.WriteString("HighlightReconstruction=true\n")
 	sb.WriteString("HighlightReconstructionMethod=blend\n\n")
+||||||| Stash base
+	sb.WriteString("HighlightComprThreshold=0\n\n")
+=======
+	sb.WriteString("HighlightComprThreshold=0\n")
+	// Add shadow/highlight recovery if specified
+	if params.ShadowRecovery > 0 {
+		sb.WriteString(fmt.Sprintf("ShadowRecovery=%d\n", clamp(params.ShadowRecovery, 0, 80)))
+	}
+	if params.HighlightRecovery > 0 {
+		sb.WriteString(fmt.Sprintf("HighlightRecovery=%d\n", clamp(params.HighlightRecovery, 0, 80)))
+	}
+	sb.WriteString("\n")
+>>>>>>> Stashed changes
 ||||||| Stash base
 	sb.WriteString("HighlightComprThreshold=0\n\n")
 =======
@@ -548,10 +571,92 @@ func GeneratePP3FromNative(params *models.PP3Params, isRaw bool) []byte {
 		sb.WriteString("Enabled=false\n")
 	}
 	sb.WriteString("\n")
+<<<<<<< Updated upstream
 ||||||| Stash base
 	sb.WriteString("[SharpenMicro]\n")
 	sb.WriteString("Enabled=false\n\n")
 =======
+	// Micro Contrast (local contrast/clarity) - always include as it's similar to Adobe Clarity
+	if params.SharpenMicroStrength > 0 {
+		sb.WriteString("[SharpenMicro]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.SharpenMicroStrength, 5, 60)))
+		sb.WriteString(fmt.Sprintf("Contrast=%d\n", clamp(params.SharpenMicroContrast, 5, 40)))
+		sb.WriteString(fmt.Sprintf("Uniformity=%d\n", clamp(params.SharpenMicroUniformity, 20, 100)))
+		sb.WriteString("Matrix=false\n\n")
+	} else {
+		sb.WriteString("[SharpenMicro]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
+>>>>>>> Stashed changes
+||||||| Stash base
+
+	// === RAW PROCESSING (use defaults) ===
+	sb.WriteString("[RAW]\n")
+	sb.WriteString("CA=true\n")
+	sb.WriteString("CAAutoIterations=2\n")
+	sb.WriteString("HotPixelFilter=true\n")
+	sb.WriteString("DeadPixelFilter=true\n\n")
+
+	sb.WriteString("[RAW Bayer]\n")
+	sb.WriteString("Method=rcd\n")
+	sb.WriteString("Border=4\n")
+	sb.WriteString("ImageNum=1\n")
+	sb.WriteString("CcSteps=0\n\n")
+
+	// === DISABLE ALL SHARPENING (causes artifacts) ===
+	sb.WriteString("[Sharpening]\n")
+	sb.WriteString("Enabled=false\n\n")
+
+	sb.WriteString("[SharpenEdge]\n")
+	sb.WriteString("Enabled=false\n\n")
+
+	sb.WriteString("[SharpenMicro]\n")
+	sb.WriteString("Enabled=false\n\n")
+=======
+
+	// === RAW PROCESSING (use defaults) ===
+	sb.WriteString("[RAW]\n")
+	sb.WriteString("CA=true\n")
+	sb.WriteString("CAAutoIterations=2\n")
+	sb.WriteString("HotPixelFilter=true\n")
+	sb.WriteString("DeadPixelFilter=true\n\n")
+
+	sb.WriteString("[RAW Bayer]\n")
+	sb.WriteString("Method=rcd\n")
+	sb.WriteString("Border=4\n")
+	sb.WriteString("ImageNum=1\n")
+	sb.WriteString("CcSteps=0\n\n")
+
+	// === SHARPENING (enable selectively based on parameters) ===
+	// Output Sharpening - for final image crispness
+	if params.SharpenEnabled && params.SharpenAmount > 0 {
+		sb.WriteString("[Sharpening]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString("Contrast=20\n")
+		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(params.SharpenAmount, 50, 500)))
+		sb.WriteString(fmt.Sprintf("Radius=%.2f\n", clampFloat(params.SharpenRadius, 0.5, 2.0)))
+		sb.WriteString("OnlyEdges=false\n")
+		sb.WriteString("EdgedetectionRadius=1.9\n")
+		sb.WriteString("EdgeTolerance=1800\n")
+		sb.WriteString("HalocontrolEnabled=false\n\n")
+	} else {
+		sb.WriteString("[Sharpening]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
+
+	// Edge Sharpening - for edge enhancement
+	if params.EdgeSharpenEnabled && params.EdgeSharpenAmount > 0 {
+		sb.WriteString("[SharpenEdge]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Amount=%d\n", clamp(params.EdgeSharpenAmount, 10, 100)))
+		sb.WriteString(fmt.Sprintf("Passes=%d\n", clamp(params.EdgeSharpenPasses, 1, 3)))
+		sb.WriteString("ThreeChannels=false\n\n")
+	} else {
+		sb.WriteString("[SharpenEdge]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
+
 	// Micro Contrast (local contrast/clarity) - always include as it's similar to Adobe Clarity
 	if params.SharpenMicroStrength > 0 {
 		sb.WriteString("[SharpenMicro]\n")
@@ -580,6 +685,7 @@ func GeneratePP3FromNative(params *models.PP3Params, isRaw bool) []byte {
 	}
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	sb.WriteString("[Dehaze]\n")
 	if params.DehazeStrength != 0 {
 		sb.WriteString("Enabled=true\n")
@@ -588,6 +694,99 @@ func GeneratePP3FromNative(params *models.PP3Params, isRaw bool) []byte {
 		sb.WriteString("Enabled=false\n")
 	}
 	sb.WriteString("\n")
+||||||| Stash base
+	sb.WriteString("[Dehaze]\n")
+	sb.WriteString("Enabled=false\n\n")
+=======
+	// === DEHAZE (atmospheric haze removal) ===
+	if params.DehazeStrength > 0 {
+		sb.WriteString("[Dehaze]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString(fmt.Sprintf("Strength=%d\n", clamp(params.DehazeStrength, 0, 40)))
+		sb.WriteString("ShowDepthMap=false\n")
+		sb.WriteString("Depth=25\n")
+		sb.WriteString("Luminosity=true\n\n")
+	} else {
+		sb.WriteString("[Dehaze]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
+
+	// === HSL ADJUSTMENTS (Color Correction) ===
+	hasHSLAdjustments := params.HueRed != 0 || params.HueOrange != 0 || params.HueYellow != 0 || params.HueGreen != 0 ||
+		params.HueAqua != 0 || params.HueBlue != 0 || params.HuePurple != 0 || params.HueMagenta != 0 ||
+		params.SaturationRed != 0 || params.SaturationOrange != 0 || params.SaturationYellow != 0 || params.SaturationGreen != 0 ||
+		params.SaturationAqua != 0 || params.SaturationBlue != 0 || params.SaturationPurple != 0 || params.SaturationMagenta != 0 ||
+		params.LuminanceRed != 0 || params.LuminanceOrange != 0 || params.LuminanceYellow != 0 || params.LuminanceGreen != 0 ||
+		params.LuminanceAqua != 0 || params.LuminanceBlue != 0 || params.LuminancePurple != 0 || params.LuminanceMagenta != 0
+
+	if hasHSLAdjustments {
+		sb.WriteString("[Color Correction]\n")
+		sb.WriteString("Enabled=true\n")
+		// Color regions (RT has 6 main regions: red, yellow, green, cyan, blue, magenta)
+		sb.WriteString("ColorCorrectionRegions=1;0.166667;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("2;0.33;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("3;0.5;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("4;0.66;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("5;0.83;0.5;0.5;0.5;0;1;1;0;")
+		sb.WriteString("6;1;0.5;0.5;0.5;0;1;1;0;\n")
+
+		// Map Adobe's 8 colors to RT's 6 color regions (combine some)
+		redHue := clamp(params.HueRed, -100, 100)
+		yellowHue := clamp((params.HueOrange+params.HueYellow)/2, -100, 100) // Combine orange and yellow
+		greenHue := clamp(params.HueGreen, -100, 100)
+		cyanHue := clamp(params.HueAqua, -100, 100)
+		blueHue := clamp(params.HueBlue, -100, 100)
+		magentaHue := clamp((params.HuePurple+params.HueMagenta)/2, -100, 100) // Combine purple and magenta
+
+		sb.WriteString(fmt.Sprintf("HueShift=%d;%d;%d;%d;%d;%d;\n", redHue, yellowHue, greenHue, cyanHue, blueHue, magentaHue))
+
+		redSat := clamp(params.SaturationRed, -100, 100)
+		yellowSat := clamp((params.SaturationOrange+params.SaturationYellow)/2, -100, 100)
+		greenSat := clamp(params.SaturationGreen, -100, 100)
+		cyanSat := clamp(params.SaturationAqua, -100, 100)
+		blueSat := clamp(params.SaturationBlue, -100, 100)
+		magentaSat := clamp((params.SaturationPurple+params.SaturationMagenta)/2, -100, 100)
+
+		sb.WriteString(fmt.Sprintf("SaturationAdjustment=%d;%d;%d;%d;%d;%d;\n", redSat, yellowSat, greenSat, cyanSat, blueSat, magentaSat))
+
+		redLum := clamp(params.LuminanceRed, -100, 100)
+		yellowLum := clamp((params.LuminanceOrange+params.LuminanceYellow)/2, -100, 100)
+		greenLum := clamp(params.LuminanceGreen, -100, 100)
+		cyanLum := clamp(params.LuminanceAqua, -100, 100)
+		blueLum := clamp(params.LuminanceBlue, -100, 100)
+		magentaLum := clamp((params.LuminancePurple+params.LuminanceMagenta)/2, -100, 100)
+
+		sb.WriteString(fmt.Sprintf("LuminanceAdjustment=%d;%d;%d;%d;%d;%d;\n", redLum, yellowLum, greenLum, cyanLum, blueLum, magentaLum))
+		sb.WriteString("\n")
+	} else {
+		sb.WriteString("[Color Correction]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
+
+	// === COLOR TONING (Split Toning equivalent) ===
+	hasColorToning := params.ColorToningShadowR != 0 || params.ColorToningShadowG != 0 || params.ColorToningShadowB != 0 ||
+		params.ColorToningHighlightR != 0 || params.ColorToningHighlightG != 0 || params.ColorToningHighlightB != 0
+
+	if hasColorToning {
+		sb.WriteString("[Color Toning]\n")
+		sb.WriteString("Enabled=true\n")
+		sb.WriteString("Method=RGBSliders\n")
+		sb.WriteString(fmt.Sprintf("RedShadows=%d\n", clamp(params.ColorToningShadowR, -100, 100)))
+		sb.WriteString(fmt.Sprintf("GreenShadows=%d\n", clamp(params.ColorToningShadowG, -100, 100)))
+		sb.WriteString(fmt.Sprintf("BlueShadows=%d\n", clamp(params.ColorToningShadowB, -100, 100)))
+		sb.WriteString(fmt.Sprintf("RedHighlights=%d\n", clamp(params.ColorToningHighlightR, -100, 100)))
+		sb.WriteString(fmt.Sprintf("GreenHighlights=%d\n", clamp(params.ColorToningHighlightG, -100, 100)))
+		sb.WriteString(fmt.Sprintf("BlueHighlights=%d\n", clamp(params.ColorToningHighlightB, -100, 100)))
+		sb.WriteString(fmt.Sprintf("Balance=%d\n", clamp(params.ColorToningBalance, 0, 100)))
+		sb.WriteString("Saturation=30\n")
+		sb.WriteString("Strength=50\n")
+		sb.WriteString("HighlightsColorSaturation=60;80;\n")
+		sb.WriteString("ShadowsColorSaturation=80;208;\n\n")
+	} else {
+		sb.WriteString("[Color Toning]\n")
+		sb.WriteString("Enabled=false\n\n")
+	}
+>>>>>>> Stashed changes
 ||||||| Stash base
 	sb.WriteString("[Dehaze]\n")
 	sb.WriteString("Enabled=false\n\n")

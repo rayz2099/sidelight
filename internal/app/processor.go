@@ -242,10 +242,17 @@ func (p *Processor) generatePP3Native(ctx context.Context, rawPath string, previ
 	}
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	// Generate PP3 file using native params
 	pp3Data := rt.GeneratePP3FromNative(pp3Params, isRaw)
 
 	pp3Path := strings.TrimSuffix(rawPath, filepath.Ext(rawPath)) + ".pp3"
+||||||| Stash base
+	ext := filepath.Ext(rawPath)
+	pp3Path := strings.TrimSuffix(rawPath, ext) + ".pp3"
+=======
+	pp3Path := p.resolveOutputPath(rawPath, ".pp3", opts)
+>>>>>>> Stashed changes
 ||||||| Stash base
 	ext := filepath.Ext(rawPath)
 	pp3Path := strings.TrimSuffix(rawPath, ext) + ".pp3"

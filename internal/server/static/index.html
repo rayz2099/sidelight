@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     <title>SideLight AI Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,8 +16,16 @@
     <title>SideLight Pro - AI Photo Color Grading Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 >>>>>>> Stashed changes
+||||||| Stash base
+    <title>SideLight Web</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+=======
+    <title>SideLight Pro - AI Photo Color Grading Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+>>>>>>> Stashed changes
     <style>
         :root {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
             --bg-dark: #050505;
             --surface: rgba(255, 255, 255, 0.05);
@@ -61,8 +70,41 @@
             --gradient-accent: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-pink) 100%);
             --gradient-rainbow: linear-gradient(135deg, #007AFF 0%, #5E5CE6 25%, #AF52DE 50%, #FF2D92 75%, #FF9500 100%);
 >>>>>>> Stashed changes
+||||||| Stash base
+            --bg-dark: #0f0f11;
+            --surface-dark: #1c1c1e;
+            --primary: #0a84ff;
+            --primary-hover: #0077ed;
+            --text-main: #f5f5f7;
+            --text-secondary: #86868b;
+            --border: #38383a;
+            --accent-gradient: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
+=======
+            --bg-dark: #0a0a0b;
+            --bg-gradient: linear-gradient(135deg, #0a0a0b 0%, #1a1a1c 25%, #2d1b3d 75%, #0a0a0b 100%);
+            --surface-dark: rgba(28, 28, 30, 0.8);
+            --surface-glass: rgba(255, 255, 255, 0.05);
+            --primary: #007AFF;
+            --primary-glow: rgba(0, 122, 255, 0.4);
+            --secondary: #5E5CE6;
+            --accent-purple: #AF52DE;
+            --accent-pink: #FF2D92;
+            --text-main: #F5F5F7;
+            --text-secondary: #98989D;
+            --text-tertiary: #636366;
+            --border: rgba(255, 255, 255, 0.1);
+            --border-glow: rgba(0, 122, 255, 0.3);
+            --success: #34C759;
+            --warning: #FF9500;
+            --error: #FF3B30;
+
+            --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            --gradient-accent: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-pink) 100%);
+            --gradient-rainbow: linear-gradient(135deg, #007AFF 0%, #5E5CE6 25%, #AF52DE 50%, #FF2D92 75%, #FF9500 100%);
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         body {
             font-family: 'Space Grotesk', sans-serif;
@@ -82,8 +124,34 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+||||||| Stash base
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 40px 20px; 
+            background: var(--bg-dark); 
+            color: var(--text-main);
+            min-height: 100vh;
+=======
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            background-image: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+>>>>>>> Stashed changes
+        }
+
+<<<<<<< Updated upstream
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-dark);
@@ -138,8 +206,63 @@
             height: 100%;
             pointer-events: none;
             z-index: -1;
+||||||| Stash base
+        h1 { 
+            text-align: center; 
+            margin-bottom: 60px; 
+            font-weight: 800;
+            font-size: 3.5rem;
+            letter-spacing: -0.02em;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+=======
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
         }
 
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.4; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            position: relative;
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            letter-spacing: -0.03em;
+            background: var(--gradient-rainbow);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            text-shadow: 0 0 60px var(--primary-glow);
+>>>>>>> Stashed changes
+        }
+
+<<<<<<< Updated upstream
         .particle {
             position: absolute;
             width: 2px;
@@ -193,58 +316,150 @@
             display: grid; 
             grid-template-columns: 350px 1fr; 
             gap: 30px; 
+||||||| Stash base
+        .container { 
+            display: grid; 
+            grid-template-columns: 350px 1fr; 
+            gap: 30px; 
+=======
+        .tagline {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 40px;
+>>>>>>> Stashed changes
             align-items: start;
         }
 
-        .controls { 
-            background: var(--surface-dark); 
-            padding: 30px; 
-            border-radius: 20px; 
+        /* Control Panel */
+        .control-panel {
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px) saturate(1.8);
             border: 1px solid var(--border);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
+            border-radius: 24px;
+            padding: 32px;
             position: sticky;
-            top: 40px;
+            top: 30px;
+            box-shadow:
+                0 32px 64px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        .preview-card { 
-            background: var(--surface-dark); 
-            padding: 10px; 
-            border-radius: 20px; 
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
-            min-height: 600px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+        .panel-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .panel-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .panel-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .label-icon {
+            font-size: 1rem;
+        }
+
+        /* File Drop Zone */
+        .file-drop {
+            border: 2px dashed var(--border);
+            background: rgba(255, 255, 255, 0.02);
+            padding: 32px 20px;
+            text-align: center;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
-            background-image: 
-                radial-gradient(circle at center, #2c2c2e 1px, transparent 1px);
-            background-size: 24px 24px;
-        }
-        
-        .form-group { margin-bottom: 24px; }
-        
-        label { 
-            display: block; 
-            margin-bottom: 10px; 
-            font-weight: 600; 
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
-        select, textarea { 
-            width: 100%; 
-            padding: 14px; 
-            background: #2c2c2e; 
-            border: 1px solid transparent; 
-            border-radius: 12px; 
-            color: white; 
-            font-size: 15px; 
-            transition: all 0.2s;
+        .file-drop::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .file-drop:hover::before {
+            left: 100%;
+        }
+
+        .file-drop:hover {
+            border-color: var(--primary);
+            background: rgba(0, 122, 255, 0.1);
+            box-shadow: 0 0 30px var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+        .file-drop.has-file {
+            border-color: var(--success);
+            background: rgba(52, 199, 89, 0.1);
+            box-shadow: 0 0 30px rgba(52, 199, 89, 0.3);
+        }
+
+        .file-icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+            display: block;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .file-text {
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        /* Select & Textarea */
+        select, textarea {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            color: var(--text-main);
+            font-size: 15px;
             font-family: inherit;
+<<<<<<< Updated upstream
             box-sizing: border-box;
 =======
         .tagline {
@@ -252,6 +467,12 @@
             color: var(--text-secondary);
             font-weight: 400;
             margin-bottom: 20px;
+||||||| Stash base
+            box-sizing: border-box;
+=======
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            appearance: none;
+>>>>>>> Stashed changes
         }
 
         /* Main Container */
@@ -402,6 +623,7 @@
         select:focus, textarea:focus {
             outline: none;
             border-color: var(--primary);
+<<<<<<< Updated upstream
             background: #3a3a3c;
 =======
         select:focus, textarea:focus {
@@ -410,8 +632,15 @@
             background: rgba(255, 255, 255, 0.12);
             box-shadow: 0 0 20px var(--primary-glow);
 >>>>>>> Stashed changes
+||||||| Stash base
+            background: #3a3a3c;
+=======
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 20px var(--primary-glow);
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         .panel-title {
             font-size: 0.9rem;
@@ -462,8 +691,28 @@
             background-size: 16px;
             padding-right: 50px;
 >>>>>>> Stashed changes
+||||||| Stash base
+        textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+        
+        .file-drop { 
+            border: 2px dashed var(--border); 
+            padding: 40px 20px; 
+            text-align: center; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            background: rgba(255,255,255,0.02);
+=======
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23F5F5F7' viewBox='0 0 16 16'%3E%3Cpath d='M8 10.293l3.646-3.647.708.708L8 11.707 3.646 7.354l.708-.708L8 10.293z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 50px;
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         .file-drop-zone:hover, .file-drop-zone.drag-over {
             border-color: var(--primary);
@@ -479,8 +728,19 @@
             min-height: 120px;
             line-height: 1.6;
 >>>>>>> Stashed changes
+||||||| Stash base
+        .file-drop:hover { 
+            border-color: var(--primary); 
+            background: rgba(10, 132, 255, 0.05); 
+=======
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.6;
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         .drop-icon {
             font-size: 24px;
@@ -496,8 +756,33 @@
             border-style: solid; 
             border-color: var(--primary); 
             background: rgba(10, 132, 255, 0.1); 
+||||||| Stash base
+        .file-drop.has-file { 
+            border-style: solid; 
+            border-color: var(--primary); 
+            background: rgba(10, 132, 255, 0.1); 
+=======
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            padding: 18px 24px;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                0 8px 24px rgba(0, 122, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
         .file-icon {
             font-size: 24px;
             margin-bottom: 10px;
@@ -534,8 +819,39 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
             position: relative;
             overflow: hidden;
+||||||| Stash base
+        .file-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        button { 
+            background: var(--accent-gradient); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            border-radius: 14px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            width: 100%; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+=======
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
         .btn-primary::before {
             content: '';
             position: absolute;
@@ -659,8 +975,17 @@
         .btn-primary:hover::before {
             left: 100%;
 >>>>>>> Stashed changes
+||||||| Stash base
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(10, 132, 255, 0.4);
+=======
+        .btn-primary:hover::before {
+            left: 100%;
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         .btn-generate:hover::before {
             left: 100%;
@@ -679,7 +1004,33 @@
             background: #3a3a3c; 
             color: #666; 
             transform: none; 
+||||||| Stash base
+        button:active { transform: translateY(0); }
+        
+        button:disabled { 
+            background: #3a3a3c; 
+            color: #666; 
+            transform: none; 
+=======
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow:
+                0 16px 40px rgba(0, 122, 255, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-tertiary);
+            cursor: not-allowed;
+            transform: none;
+>>>>>>> Stashed changes
             box-shadow: none;
+<<<<<<< Updated upstream
             cursor: not-allowed; 
         }
         
@@ -694,8 +1045,20 @@
             box-shadow:
                 0 16px 40px rgba(0, 122, 255, 0.4),
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
+||||||| Stash base
+            cursor: not-allowed; 
+        }
+        
+        img { 
+            max-width: 100%; 
+            max-height: 800px; 
+            border-radius: 12px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+=======
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
         .btn-primary:active {
             transform: translateY(-1px);
         }
@@ -823,8 +1186,107 @@
         .loading {
             display: none;
 >>>>>>> Stashed changes
+||||||| Stash base
+        .loading { 
+            display: none; 
+=======
+        /* Preview Area */
+        .preview-area {
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px) saturate(1.8);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            min-height: 700px;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 32px 64px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .preview-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preview-tab {
+            flex: 1;
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .preview-tab.active {
+            color: var(--text-main);
+        }
+
+        .preview-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+        }
+
+        .preview-content {
+            padding: 32px;
+            height: calc(100% - 57px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .preview-placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        /* Result Display */
+        .result-image {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 16px;
+            box-shadow:
+                0 24px 60px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .result-code {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 24px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-main);
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+>>>>>>> Stashed changes
             flex-direction: column;
             align-items: center;
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
             justify-content: center;
             padding: 30px;
@@ -909,13 +1371,30 @@
             gap: 24px;
             color: var(--text-secondary);
 >>>>>>> Stashed changes
+||||||| Stash base
+            gap: 15px;
+            color: var(--text-secondary); 
+=======
+            gap: 24px;
+            color: var(--text-secondary);
+>>>>>>> Stashed changes
         }
 
         .spinner {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             width: 50px;
             height: 50px;
             border: 3px solid rgba(255,255,255,0.1);
+||||||| Stash base
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+=======
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+>>>>>>> Stashed changes
 ||||||| Stash base
             width: 40px;
             height: 40px;
@@ -932,9 +1411,16 @@
             margin-bottom: 16px;
 ||||||| Stash base
             border-top-color: var(--primary);
+<<<<<<< Updated upstream
             animation: spin 1s ease-in-out infinite;
 =======
             border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+            box-shadow: 0 0 20px var(--primary-glow);
+>>>>>>> Stashed changes
+||||||| Stash base
+            animation: spin 1s ease-in-out infinite;
+=======
             animation: spin 1s linear infinite;
             box-shadow: 0 0 20px var(--primary-glow);
 >>>>>>> Stashed changes
@@ -953,6 +1439,7 @@
         }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         .params-panel.visible {
             max-height: 300px;
             overflow-y: auto;
@@ -965,7 +1452,28 @@
             background: rgba(255, 69, 58, 0.1);
             padding: 10px;
             border-radius: 8px;
+||||||| Stash base
+        .error { 
+            color: #ff453a; 
+            margin-top: 15px; 
+            font-size: 14px; 
+            text-align: center;
+            background: rgba(255, 69, 58, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+=======
+        /* Error */
+        .error {
+            background: rgba(255, 59, 48, 0.15);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            color: var(--error);
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            margin-top: 16px;
+>>>>>>> Stashed changes
             display: none;
+<<<<<<< Updated upstream
 =======
         /* Error */
         .error {
@@ -979,8 +1487,13 @@
             display: none;
             backdrop-filter: blur(10px);
 >>>>>>> Stashed changes
+||||||| Stash base
+=======
+            backdrop-filter: blur(10px);
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         .params-header {
             padding: 15px 25px;
@@ -1018,8 +1531,34 @@
             right: 16px;
             backdrop-filter: blur(10px);
 >>>>>>> Stashed changes
+||||||| Stash base
+        /* Select styling hack */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 0.65em auto;
+=======
+        /* Format Indicator */
+        .format-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--gradient-primary);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            backdrop-filter: blur(10px);
+>>>>>>> Stashed changes
         }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         .json-content {
             padding: 20px 25px;
@@ -1114,10 +1653,65 @@
             font-size: 0.8rem;
             font-weight: 600;
 >>>>>>> Stashed changes
+||||||| Stash base
+        @media (max-width: 800px) {
+            .container { grid-template-columns: 1fr; }
+            h1 { font-size: 2.5rem; }
+            .controls { position: static; }
+=======
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .control-panel {
+                position: static;
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 40px 20px 30px;
+            }
+
+            .logo {
+                font-size: 2.5rem;
+            }
+
+            .control-panel, .preview-area {
+                border-radius: 16px;
+                padding: 24px;
+            }
+        }
+
+        /* Advanced styles for future frame feature */
+        .feature-preview {
+            opacity: 0.5;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .feature-preview::after {
+            content: '🔜 Coming Soon';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--gradient-accent);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+>>>>>>> Stashed changes
         }
     </style>
 </head>
 <body>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     <nav class="navbar">
         <div class="logo">SideLight AI</div>
@@ -1138,9 +1732,36 @@
     
     <div class="container">
         <div class="controls">
+||||||| Stash base
+    <h1>SideLight Web</h1>
+    
+    <div class="container">
+        <div class="controls">
+=======
+    <!-- Animated background -->
+    <div class="particles" id="particles"></div>
+
+    <div class="header">
+        <h1 class="logo">SideLight Pro</h1>
+        <p class="tagline">Professional AI Color Grading & Frame Studio</p>
+    </div>
+
+    <div class="main-container">
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">AI Color Grading</h2>
+                <p class="panel-subtitle">Transform your photos with professional color grading</p>
+            </div>
+
+>>>>>>> Stashed changes
             <div class="form-group">
-                <label>Image (RAW/JPG)</label>
+                <label class="form-label">
+                    <span class="label-icon">📁</span>
+                    Select Image
+                </label>
                 <div class="file-drop" id="dropZone">
+<<<<<<< Updated upstream
                     <span class="file-icon">📁</span>
                     <p id="fileName" style="margin: 0">Click or Drag & Drop File</p>
 =======
@@ -1169,9 +1790,17 @@
                     <span class="file-icon">🎨</span>
                     <p class="file-text" id="fileName">Drag & Drop or Click to Select<br><small>RAW, JPG, PNG supported</small></p>
 >>>>>>> Stashed changes
+||||||| Stash base
+                    <span class="file-icon">📁</span>
+                    <p id="fileName" style="margin: 0">Click or Drag & Drop File</p>
+=======
+                    <span class="file-icon">🎨</span>
+                    <p class="file-text" id="fileName">Drag & Drop or Click to Select<br><small>RAW, JPG, PNG supported</small></p>
+>>>>>>> Stashed changes
                     <input type="file" id="fileInput" accept=".ARW,.CR2,.CR3,.NEF,.DNG,.JPG,.JPEG,.PNG" style="display: none">
                 </div>
             </div>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
             <div class="control-group">
@@ -1210,17 +1839,19 @@
                 <img id="resultImage" class="preview-img" style="display: none">
 ||||||| Stash base
             
+||||||| Stash base
+            
+=======
+
+>>>>>>> Stashed changes
             <div class="form-group">
-                <label>Style Preset</label>
-                <select id="styleSelect">
-                    <option value="natural">🌿 Natural</option>
-                    <option value="film">🎞️ Analog Film</option>
-                    <option value="kodak">☀️ Kodak Portra</option>
-                    <option value="fuji">🗻 Fujifilm</option>
-                    <option value="cinematic">🎬 Cinematic</option>
-                    <option value="vivid">🌈 Vivid</option>
-                    <option value="bw">⚫ Black & White</option>
-                    <option value="matte">🌫️ Matte</option>
+                <label class="form-label">
+                    <span class="label-icon">⚙️</span>
+                    Output Format
+                </label>
+                <select id="formatSelect" onchange="toggleFormatView()">
+                    <option value="xmp">📄 Adobe Lightroom (XMP)</option>
+                    <option value="rt">🎨 RawTherapee (PP3 + Preview)</option>
                 </select>
 =======
 
@@ -1236,6 +1867,7 @@
 >>>>>>> Stashed changes
             </div>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             
             <!-- Toolbar for actions -->
             <div id="previewToolbar" class="preview-toolbar">
@@ -1244,7 +1876,13 @@
                 </a>
 ||||||| Stash base
             
+||||||| Stash base
+            
+=======
+
+>>>>>>> Stashed changes
             <div class="form-group">
+<<<<<<< Updated upstream
                 <label>Custom Prompt (Optional)</label>
                 <textarea id="promptInput" placeholder="Describe the look you want... (e.g., 'Warm sunset vibes, high contrast, dreamy glow')"></textarea>
 =======
@@ -1272,7 +1910,34 @@
                     <option value="bw-contrast">🔲 High Contrast B&W</option>
                 </select>
 >>>>>>> Stashed changes
+||||||| Stash base
+                <label>Custom Prompt (Optional)</label>
+                <textarea id="promptInput" placeholder="Describe the look you want... (e.g., 'Warm sunset vibes, high contrast, dreamy glow')"></textarea>
+=======
+                <label class="form-label">
+                    <span class="label-icon">🎭</span>
+                    Style Preset
+                </label>
+                <select id="styleSelect">
+                    <option value="natural">🌿 Natural</option>
+                    <option value="cinematic">🎬 Cinematic</option>
+                    <option value="teal-orange">🧡 Teal-Orange</option>
+                    <option value="cyberpunk">🤖 Cyberpunk</option>
+                    <option value="film">🎞️ Film Emulation</option>
+                    <option value="kodak">☀️ Kodak Portra</option>
+                    <option value="fuji">🗻 Fujifilm</option>
+                    <option value="polaroid">📸 Polaroid</option>
+                    <option value="retro-70s">🌅 Retro 70s</option>
+                    <option value="matte">🌫️ Matte Film</option>
+                    <option value="dreamy">✨ Dreamy</option>
+                    <option value="wes-anderson">🎨 Wes Anderson</option>
+                    <option value="vivid">🌈 Vivid</option>
+                    <option value="bw">⚫ Black & White</option>
+                    <option value="bw-contrast">🔲 High Contrast B&W</option>
+                </select>
+>>>>>>> Stashed changes
             </div>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
             
             <div class="loader-overlay" id="loadingSpinner">
@@ -1281,8 +1946,39 @@
 ||||||| Stash base
             
             <button id="generateBtn">✨ Generate Preview</button>
+||||||| Stash base
+            
+            <button id="generateBtn">✨ Generate Preview</button>
+=======
+
+            <div class="form-group">
+                <label class="form-label">
+                    <span class="label-icon">💭</span>
+                    Custom Prompt
+                </label>
+                <textarea id="promptInput" placeholder="Describe your vision...&#10;e.g., 'Warm golden hour vibes with high contrast and dreamy glow'"></textarea>
+            </div>
+
+            <div class="form-group feature-preview">
+                <label class="form-label">
+                    <span class="label-icon">🖼️</span>
+                    Frame Style
+                </label>
+                <select>
+                    <option>🎨 Modern Minimal</option>
+                    <option>📸 Classic Film</option>
+                    <option>🌟 Golden Vintage</option>
+                    <option>🎭 Art Gallery</option>
+                </select>
+            </div>
+
+            <button class="btn-primary" id="generateBtn">
+                <span id="btnText">✨ Generate Magic</span>
+            </button>
+>>>>>>> Stashed changes
             <div id="errorMsg" class="error"></div>
         </div>
+<<<<<<< Updated upstream
         
         <div class="preview-card" id="previewContainer">
             <div class="loading" id="loadingSpinner">
@@ -1296,7 +1992,50 @@
                     Custom Prompt
                 </label>
                 <textarea id="promptInput" placeholder="Describe your vision...&#10;e.g., 'Warm golden hour vibes with high contrast and dreamy glow'"></textarea>
+||||||| Stash base
+        
+        <div class="preview-card" id="previewContainer">
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <span>Processing with AI...</span>
+=======
+
+        <!-- Preview Area -->
+        <div class="preview-area">
+            <div class="format-indicator" id="formatIndicator">
+                📄 XMP Mode
             </div>
+
+            <div class="preview-tabs">
+                <button class="preview-tab active" id="tab-preview" onclick="switchTab('preview')">🖼️ Preview</button>
+                <button class="preview-tab" id="tab-config" onclick="switchTab('config')">📝 Configuration</button>
+            </div>
+
+            <div class="preview-content">
+                <div id="preview-panel">
+                    <div class="loading" id="loadingSpinner">
+                        <div class="spinner"></div>
+                        <span>AI is creating magic...</span>
+                    </div>
+                    <div class="preview-placeholder" id="previewPlaceholder">
+                        <div class="preview-placeholder-icon">🎨</div>
+                        <h3>Ready for Magic</h3>
+                        <p>Select an image and style to see the preview</p>
+                    </div>
+                    <img id="resultImage" class="result-image" style="display: none">
+                </div>
+
+                <div id="config-panel" style="display: none;">
+                    <div class="preview-placeholder" id="configPlaceholder">
+                        <div class="preview-placeholder-icon">📝</div>
+                        <h3>Configuration</h3>
+                        <p>Generate an image to see the configuration</p>
+                    </div>
+                    <pre id="configContent" class="result-code" style="display: none;"></pre>
+                </div>
+>>>>>>> Stashed changes
+            </div>
+<<<<<<< Updated upstream
 
             <div class="form-group feature-preview">
                 <label class="form-label">
@@ -1364,6 +2103,10 @@
         </main>
 ||||||| Stash base
             <img id="resultImage" style="display: none">
+||||||| Stash base
+            <img id="resultImage" style="display: none">
+=======
+>>>>>>> Stashed changes
         </div>
 =======
         </div>
@@ -1407,6 +2150,7 @@
         let selectedFile = null;
 ||||||| Stash base
         const errorMsg = document.getElementById('errorMsg');
+<<<<<<< Updated upstream
         
         let selectedFile = null;
 =======
@@ -1417,9 +2161,27 @@
         const configPlaceholder = document.getElementById('configPlaceholder');
         const configContent = document.getElementById('configContent');
 >>>>>>> Stashed changes
+||||||| Stash base
+        
+        let selectedFile = null;
+=======
+        const formatSelect = document.getElementById('formatSelect');
+        const formatIndicator = document.getElementById('formatIndicator');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const configPlaceholder = document.getElementById('configPlaceholder');
+        const configContent = document.getElementById('configContent');
+>>>>>>> Stashed changes
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         // File Handling
+||||||| Stash base
+=======
+        let selectedFile = null;
+        let currentConfig = '';
+
+        // File handling
+>>>>>>> Stashed changes
 ||||||| Stash base
 =======
         let selectedFile = null;
@@ -1439,10 +2201,15 @@
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = 'var(--primary)';
+<<<<<<< Updated upstream
 =======
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = 'var(--primary)';
+            dropZone.style.transform = 'translateY(-4px)';
+>>>>>>> Stashed changes
+||||||| Stash base
+=======
             dropZone.style.transform = 'translateY(-4px)';
 >>>>>>> Stashed changes
         });
@@ -1457,10 +2224,20 @@
         dropZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = 'var(--border)';
+<<<<<<< Updated upstream
 =======
         dropZone.addEventListener('dragleave', (e) => {
+||||||| Stash base
+        });
+        dropZone.addEventListener('drop', (e) => {
+=======
+            dropZone.style.transform = 'translateY(0)';
+        });
+        dropZone.addEventListener('drop', (e) => {
+>>>>>>> Stashed changes
             e.preventDefault();
             dropZone.style.borderColor = 'var(--border)';
+<<<<<<< Updated upstream
             dropZone.style.transform = 'translateY(0)';
 >>>>>>> Stashed changes
         });
@@ -1474,6 +2251,10 @@
             dropZone.style.borderColor = 'var(--border)';
             dropZone.style.transform = 'translateY(0)';
 >>>>>>> Stashed changes
+||||||| Stash base
+=======
+            dropZone.style.transform = 'translateY(0)';
+>>>>>>> Stashed changes
             if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
         });
         
@@ -1484,6 +2265,7 @@
         function handleFile(file) {
             selectedFile = file;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             fileName.textContent = file.name;
             resultImage.style.display = 'none';
             previewToolbar.style.display = 'none';
@@ -1492,7 +2274,13 @@
             hideError();
 ||||||| Stash base
             fileName.textContent = file.name;
+||||||| Stash base
+            fileName.textContent = file.name;
+=======
+            fileName.innerHTML = `<strong>${file.name}</strong><br><small>Ready to process</small>`;
+>>>>>>> Stashed changes
             dropZone.classList.add('has-file');
+<<<<<<< Updated upstream
             resultImage.style.display = 'none';
             errorMsg.style.display = 'none';
 =======
@@ -1501,10 +2289,50 @@
             hideResults();
             hideError();
 >>>>>>> Stashed changes
+||||||| Stash base
+            resultImage.style.display = 'none';
+            errorMsg.style.display = 'none';
+=======
+            hideResults();
+            hideError();
+>>>>>>> Stashed changes
         }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         // Generate Action
+||||||| Stash base
+=======
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+
+            if (tab === 'preview') {
+                document.getElementById('preview-panel').style.display = 'block';
+                document.getElementById('config-panel').style.display = 'none';
+            } else {
+                document.getElementById('preview-panel').style.display = 'none';
+                document.getElementById('config-panel').style.display = 'block';
+            }
+        }
+
+        // Format toggle
+        function toggleFormatView() {
+            const format = formatSelect.value;
+            const indicator = formatIndicator;
+
+            if (format === 'xmp') {
+                indicator.innerHTML = '📄 XMP Mode';
+                indicator.style.background = 'var(--gradient-primary)';
+            } else {
+                indicator.innerHTML = '🎨 RT Mode';
+                indicator.style.background = 'var(--gradient-accent)';
+            }
+        }
+
+        // Main generation
+>>>>>>> Stashed changes
 ||||||| Stash base
 =======
         // Tab switching
@@ -1540,7 +2368,13 @@
         generateBtn.addEventListener('click', async () => {
             if (!selectedFile) {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 showError("Please select an image file first");
+||||||| Stash base
+                showError("Please select a file first.");
+=======
+                showError("Please select an image first.");
+>>>>>>> Stashed changes
 ||||||| Stash base
                 showError("Please select a file first.");
 =======
@@ -1549,11 +2383,23 @@
                 return;
             }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             
             setLoading(true);
             hideError();
             resultImage.style.display = 'none';
             previewToolbar.style.display = 'none';
+||||||| Stash base
+            
+            loadingSpinner.style.display = 'flex';
+            resultImage.style.display = 'none';
+            generateBtn.disabled = true;
+            errorMsg.style.display = 'none';
+=======
+
+            showLoading();
+            hideError();
+>>>>>>> Stashed changes
 ||||||| Stash base
             
             loadingSpinner.style.display = 'flex';
@@ -1583,6 +2429,7 @@
                     throw new Error(txt || 'Server error');
                 }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
                 const data = await response.json();
                 
@@ -1634,11 +2481,44 @@
                 }
 
 >>>>>>> Stashed changes
+||||||| Stash base
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                resultImage.src = url;
+                resultImage.style.display = 'block';
+=======
+                // Both formats now return JSON
+                const data = await response.json();
+
+                if (data.format === 'xmp') {
+                    // XMP mode - show configuration only
+                    showResults('', data.content);
+                } else if (data.format === 'rt') {
+                    // RT mode - show both preview image and PP3 configuration
+                    // Convert base64 string to blob for display
+                    const binaryString = atob(data.image_data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const imageBlob = new Blob([bytes], { type: 'image/jpeg' });
+                    const imageUrl = URL.createObjectURL(imageBlob);
+                    showResults(imageUrl, data.pp3_content);
+                }
+
+>>>>>>> Stashed changes
             } catch (err) {
                 showError(err.message.replace('Error: ', ''));
             } finally {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 setLoading(false);
+||||||| Stash base
+                loadingSpinner.style.display = 'none';
+                generateBtn.disabled = false;
+=======
+                hideLoading();
+>>>>>>> Stashed changes
 ||||||| Stash base
                 loadingSpinner.style.display = 'none';
                 generateBtn.disabled = false;
@@ -1649,12 +2529,52 @@
         });
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         function setLoading(isLoading) {
             loadingSpinner.style.display = isLoading ? 'flex' : 'none';
             generateBtn.disabled = isLoading;
             generateBtn.innerHTML = isLoading ? 'Processing...' : '✨ Generate Grading';
         }
 
+||||||| Stash base
+=======
+        function showLoading() {
+            loadingSpinner.style.display = 'flex';
+            previewPlaceholder.style.display = 'none';
+            configPlaceholder.style.display = 'none';
+            generateBtn.disabled = true;
+            btnText.textContent = '✨ Creating Magic...';
+        }
+
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+            generateBtn.disabled = false;
+            btnText.textContent = '✨ Generate Magic';
+        }
+
+        function showResults(imageUrl, config) {
+            if (imageUrl) {
+                resultImage.src = imageUrl;
+                resultImage.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+            }
+
+            if (config) {
+                currentConfig = config;
+                configContent.textContent = config;
+                configContent.style.display = 'block';
+                configPlaceholder.style.display = 'none';
+            }
+        }
+
+        function hideResults() {
+            resultImage.style.display = 'none';
+            configContent.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
+            configPlaceholder.style.display = 'block';
+        }
+
+>>>>>>> Stashed changes
 ||||||| Stash base
 =======
         function showLoading() {
@@ -1724,6 +2644,10 @@
                 }
                 return '<span class="' + cls + '">' + match + '</span>';
             });
+        }
+
+        function hideError() {
+            errorMsg.style.display = 'none';
         }
 
         function hideError() {
