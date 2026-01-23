@@ -13,8 +13,10 @@ services:
       # 挂载配置目录
       - "./config:/app/config"
     environment:
-      # Gemini API 配置
-      - SL_GEMINI_API_KEY=${SL_GEMINI_API_KEY}
+      # RawTherapee CLI 路径（Linux 下的路径）
+      - RT_CLI_PATH=/usr/bin/rawtherapee-cli
+      # Gemini API 配置（可选，优先使用 config.json）
+      - SL_GEMINI_API_KEY=${SL_GEMINI_API_KEY:-}
       - SL_GEMINI_ENDPOINT_URL=${SL_GEMINI_ENDPOINT_URL:-}
       - SL_GEMINI_MODEL_NAME=${SL_GEMINI_MODEL_NAME:-gemini-pro-vision}
     # 启动 web server 模式
@@ -30,7 +32,10 @@ services:
       - "./data:/app/data"
       - "./config:/app/config"
     environment:
-      - SL_GEMINI_API_KEY=${SL_GEMINI_API_KEY}
+      # RawTherapee CLI 路径
+      - RT_CLI_PATH=/usr/bin/rawtherapee-cli
+      # Gemini API 配置（优先使用 config.json）
+      - SL_GEMINI_API_KEY=${SL_GEMINI_API_KEY:-}
     # 默认命令可以通过 docker-compose run 覆盖
     command: ["--help"]
     profiles:

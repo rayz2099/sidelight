@@ -10,31 +10,38 @@
 # 拉取最新镜像
 docker pull registry.cn-shanghai.aliyuncs.com/linran-pub/sidelight:latest
 
-# 运行 web server 模式
+# 运行 web server 模式（配置文件方式）
 docker run -d \
   --name sidelight \
   -p 8080:8080 \
   -v $(pwd)/data:/app/data \
-  -e SL_GEMINI_API_KEY="your_api_key_here" \
+  -v $(pwd)/config:/app/config \
   registry.cn-shanghai.aliyuncs.com/linran-pub/sidelight:latest \
   server --port 8080
 
-# 运行 CLI 模式处理单张图片
+# 运行 CLI 模式处理单张图片（环境变量方式）
 docker run --rm \
   -v $(pwd)/data:/app/data \
+  -v $(pwd)/config:/app/config \
   -e SL_GEMINI_API_KEY="your_api_key_here" \
   registry.cn-shanghai.aliyuncs.com/linran-pub/sidelight:latest \
   grade /app/data/input.jpg --format xmp
 ```
 
-### 2. 使用 Docker Compose
+### 2. 使用 Docker Compose（推荐配置文件方式）
 
 ```bash
 # 创建必要的目录
 mkdir -p data config
 
-# 设置环境变量
-export SL_GEMINI_API_KEY="your_api_key_here"
+# 创建配置文件（推荐方式）
+cat > config/config.json << EOF
+{
+  "gemini_api_key": "your_gemini_api_key_here",
+  "gemini_endpoint_url": "",
+  "gemini_model_name": "gemini-pro-vision"
+}
+EOF
 
 # 启动 web server
 docker-compose up -d
@@ -44,6 +51,14 @@ docker-compose run --rm sidelight-cli grade /app/data/input.jpg --format pp3
 
 # 查看帮助
 docker-compose run --rm sidelight-cli --help
+```
+
+**或者使用环境变量方式：**
+
+```bash
+# 设置环境变量（备用方式）
+export SL_GEMINI_API_KEY="your_api_key_here"
+docker-compose up -d
 ```
 
 ### 3. 本地构建
@@ -56,13 +71,30 @@ docker build -t sidelight:local .
 docker run --rm sidelight:local --help
 ```
 
-## 环境变量
+## 配置方式
+
+### 1. 配置文件（推荐）
+
+创建 `config/config.json` 文件：
+
+```json
+{
+  "gemini_api_key": "your_gemini_api_key_here",
+  "gemini_endpoint_url": "",
+  "gemini_model_name": "gemini-pro-vision"
+}
+```
+
+### 2. 环境变量（备用）
 
 | 变量名 | 描述 | 默认值 |
 |--------|------|--------|
-| `SL_GEMINI_API_KEY` | Gemini API 密钥（必需） | - |
+| `RT_CLI_PATH` | RawTherapee CLI 路径（已预设） | `/usr/bin/rawtherapee-cli` |
+| `SL_GEMINI_API_KEY` | Gemini API 密钥 | - |
 | `SL_GEMINI_ENDPOINT_URL` | Gemini API 端点 | - |
-| `SL_GEMINI_MODEL_NAME` | Gemini 模型名称 | gemini-pro-vision |
+| `SL_GEMINI_MODEL_NAME` | Gemini 模型名称 | `gemini-pro-vision` |
+
+**配置优先级：** 命令行参数 > 环境变量 > 配置文件 > 默认值
 
 ## 数据卷挂载
 
@@ -76,7 +108,7 @@ docker run --rm sidelight:local --help
 ```bash
 docker run --rm \
   -v $(pwd)/data:/app/data \
-  -e SL_GEMINI_API_KEY="your_api_key" \
+  -v $(pwd)/config:/app/config \
   registry.cn-shanghai.aliyuncs.com/linran-pub/sidelight:latest \
   grade /app/data/*.jpg --style cinematic --format xmp,pp3
 ```
@@ -86,6 +118,7 @@ docker run --rm \
 ```bash
 docker run --rm \
   -v $(pwd)/data:/app/data \
+  -v $(pwd)/config:/app/config \
   registry.cn-shanghai.aliyuncs.com/linran-pub/sidelight:latest \
   frame /app/data/*.jpg --style vintage --output /app/data/output
 ```
@@ -97,7 +130,7 @@ docker run -d \
   --name sidelight-server \
   -p 8080:8080 \
   -v $(pwd)/data:/app/data \
-  -e SL_GEMINI_API_KEY="your_api_key" \
+  -v $(pwd)/config:/app/config \
   registry.cn-shanghai.aliyuncs.com/linran-pub/sidelight:latest \
   server --port 8080
 ```

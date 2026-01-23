@@ -32,6 +32,11 @@ RUN apt-get update && \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# 验证 rawtherapee-cli 安装并创建软链接（如果需要）
+RUN which rawtherapee-cli || \
+    (test -f /usr/bin/rawtherapee && ln -s /usr/bin/rawtherapee /usr/bin/rawtherapee-cli) || \
+    echo "Warning: rawtherapee-cli not found"
+
 # 创建非 root 用户
 RUN useradd -r -s /bin/false -m -d /app sidelight
 
@@ -45,6 +50,9 @@ COPY --from=builder /app/assets /app/assets
 # 创建必要的目录
 RUN mkdir -p /app/data /app/config && \
     chown -R sidelight:sidelight /app
+
+# 设置环境变量
+ENV RT_CLI_PATH=/usr/bin/rawtherapee-cli
 
 # 切换到非 root 用户
 USER sidelight
