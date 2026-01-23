@@ -10,7 +10,8 @@
       "Bash(xargs:*)",
       "Bash(md5 \"/Users/linran/workspace/lightroom/images/\"*FIXED*.jpg)",
       "Bash(md5:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(go version:*)"
     ]
   }
 }

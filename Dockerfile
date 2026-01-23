@@ -1,5 +1,5 @@
 # 多阶段构建 - 构建阶段
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25.4-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -7,9 +7,14 @@ WORKDIR /app
 # 安装 git 和 ca-certificates
 RUN apk add --no-cache git ca-certificates
 
+# 设置 Go 代理和环境变量
+ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOSUMDB=sum.golang.org
+ENV CGO_ENABLED=0
+
 # 复制 go.mod 和 go.sum 并下载依赖
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod tidy && go mod download
 
 # 复制源代码
 COPY . .
