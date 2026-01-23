@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing and dev files
+*_test.go
+*.test
+.pytest_cache
+coverage.txt
+
+# Documentation
+*.md
+docs/
+images/
+
+# Build artifacts
+bin/
+*.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Other
+.claude/
