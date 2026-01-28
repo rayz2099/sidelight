@@ -1,0 +1,20 @@
+services:
+  sidelight:
+    image: registry.cn-shanghai.aliyuncs.com/linran-pub/sidelight:latest
+    container_name: sidelight-server
+    ports:
+      - "12700:12700"
+    volumes:
+      # 挂载配置文件到容器内指定路径
+      - "./config.json:/app/sidelight-config.json:ro"
+      # 挂载临时目录到宿主机（对应 -t 参数）
+      - "/data1/sidelight/tmp:/app/tmp"
+      # 挂载数据处理目录到宿主机
+      - "/data1/sidelight/data:/app/data"
+    environment:
+      - RT_CLI_PATH=/usr/bin/rawtherapee-cli
+    # 使用 -c 参数指定配置文件，只写参数不写程序名
+    command: ["-c", "/app/sidelight-config.json", "server", "--port", "12700", "-t", "/app/tmp", "-k"]
+    restart: unless-stopped
+    # 注释掉用户限制，避免权限问题
+    # user: "1000:1000"
