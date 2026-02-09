@@ -27,12 +27,16 @@ func (m *MockExtractor) EmbedXMP(ctx context.Context, imagePath, xmpPath string)
 // MockAIClient
 type MockAIClient struct{}
 
-func (m *MockAIClient) AnalyzeImage(ctx context.Context, imageData []byte, metadata models.Metadata, opts ai.AnalysisOptions) (*models.GradingParams, error) {
+func (m *MockAIClient) AnalyzeImageLR(ctx context.Context, imageData []byte, metadata models.Metadata, opts ai.AnalysisOptions) (*models.GradingParams, error) {
 	return &models.GradingParams{
 		Exposure2012: 1.0,
 		Temperature:  5000, // Should be zeroed out for JPG
 		Tint:         50,   // Should be zeroed out for JPG
 	}, nil
+}
+
+func (m *MockAIClient) AnalyzeImageForPP3(ctx context.Context, imageData []byte, metadata models.Metadata, opts ai.AnalysisOptions) (*models.PP3Params, error) {
+	return &models.PP3Params{}, nil
 }
 
 func TestProcessFile_JPG_Logic(t *testing.T) {
@@ -48,7 +52,7 @@ func TestProcessFile_JPG_Logic(t *testing.T) {
 	}
 
 	// Run ProcessFile
-	res, err := proc.ProcessFile(ctx, jpgPath, ai.AnalysisOptions{})
+	res, err := proc.ProcessFile(ctx, jpgPath, ProcessOptions{})
 	if err != nil {
 		t.Fatalf("ProcessFile failed: %v", err)
 	}

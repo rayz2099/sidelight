@@ -36,27 +36,27 @@ func init() {
 func runServer(cmd *cobra.Command, args []string) {
 	key := viper.GetString("gemini_api_key")
 	if key == "" {
-		log.Fatal("Error: GEMINI_API_KEY is not set. Please set it via environment variable or config file.")
+		log.Fatal("[INFO] gemini_api_key is not set, please set via env or config file")
 	}
 
 	endpoint := viper.GetString("gemini_endpoint_url")
 	modelName := viper.GetString("gemini_model_name")
 
-	ctx := context.Background()
+	log.Printf("[INFO] initializing ai client (model=%s)", modelName)
 
-	// Initialize dependencies
+	ctx := context.Background()
 	aiClient, err := ai.NewGeminiClient(ctx, key, endpoint, modelName)
 	if err != nil {
-		log.Fatalf("Failed to initialize AI client: %v", err)
+		log.Fatalf("[INFO] ai client init failed: %v", err)
 	}
 	defer aiClient.Close()
 
 	ext := extractor.NewExifToolExtractor()
 	processor := app.NewProcessor(ext, aiClient)
 
-	// Start server
+	log.Printf("[INFO] starting server on port %d", serverPort)
 	srv := server.NewServer(processor, serverPort, serverTempDir, keepTemp)
 	if err := srv.Start(); err != nil {
-		log.Fatalf("Server failed: %v", err)
+		log.Fatalf("[INFO] server failed: %v", err)
 	}
 }

@@ -5,16 +5,43 @@ services:
     ports:
       - "12700:12700"
     volumes:
-      # 挂载配置文件到容器内指定路径
       - "./config.json:/app/sidelight-config.json:ro"
-      # 挂载临时目录到宿主机（对应 -t 参数）
       - "/data1/sidelight/tmp:/app/tmp"
-      # 挂载数据处理目录到宿主机
       - "/data1/sidelight/data:/app/data"
     environment:
       - RT_CLI_PATH=/usr/bin/rawtherapee-cli
-    # 使用 -c 参数指定配置文件，只写参数不写程序名
     command: ["-c", "/app/sidelight-config.json", "server", "--port", "12700", "-t", "/app/tmp", "-k"]
     restart: unless-stopped
-    # 注释掉用户限制，避免权限问题
-    # user: "1000:1000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:12700/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Cloudflare Tunnel (cloudflared) - expose sidelight to the internet
+  # 1. Create tunnel:  cloudflared tunnel create sidelight
+  # 2. Configure DNS:  cloudflared tunnel route dns sidelight your-domain.com
+  # 3. Place credentials in ./cloudflared/
+  #
+  # Cloudflare upload limits:
+  #   - Free plan: 100MB max upload
+  #   - Pro plan:  100MB max upload
+  #   - Business:  200MB max upload
+  #   - Enterprise: 500MB max upload (configurable)
+  #
+  # For large RAW files (>100MB), consider:
+  #   - Upgrading Cloudflare plan
+  #   - Using "Upload Workers" with R2 for chunked uploads
+  #   - Bypassing CF proxy for /api/grade (DNS-only, grey cloud)
+  #
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: sidelight-tunnel
+  #   command: tunnel --no-autoupdate run sidelight
+  #   volumes:
+  #     - "./cloudflared:/etc/cloudflared:ro"
+  #   depends_on:
+  #     sidelight:
+  #       condition: service_healthy
+  #   restart: unless-stopped
